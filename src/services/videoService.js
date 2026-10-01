@@ -1,7 +1,8 @@
 /**
- * Videollamada de cada clase en vivo. Se abre en una ventana aparte de la pizarra.
- *  - "jitsi": sala de Jitsi Meet creada automáticamente (gratis, sin límite de tiempo).
- *  - "link":  un link propio del profesor (Google Meet, Zoom, etc.).
+ * Videollamada de cada clase en vivo.
+ *  - "propia": videollamada de la plataforma, dentro de la pizarra (WebRTC, ver useVideoCall).
+ *  - "link":   un link del profesor (Google Meet, Zoom, etc.) que se abre en otra ventana.
+ *  - "jitsi":  sala de Jitsi Meet (clases creadas con versiones anteriores).
  */
 
 const JITSI_BASE = 'https://meet.jit.si';
@@ -12,9 +13,10 @@ function randomCode(length = 12) {
   return Array.from(bytes, (byte) => (byte % 36).toString(36)).join('');
 }
 
-/** option: { mode: 'jitsi' | 'link' | 'none', link } → video de la clase (o null). */
+/** option: { mode: 'propia' | 'link' | 'none', link } → video de la clase (o null). */
 export function buildVideo(option, sessionId) {
   if (!option || option.mode === 'none') return null;
+  if (option.mode === 'propia') return { provider: 'propia' };
   if (option.mode === 'jitsi') {
     const room = `FisicaAula-${sessionId.replace(/[^a-z0-9]/gi, '')}-${randomCode()}`;
     return { provider: 'jitsi', url: `${JITSI_BASE}/${room}` };
@@ -40,6 +42,7 @@ export function isValidLink(link = '') {
 /** "Jitsi Meet", "Google Meet", "Zoom" o el dominio del link. */
 export function videoLabel(video) {
   if (!video) return '';
+  if (video.provider === 'propia') return 'de la plataforma';
   if (video.provider === 'jitsi') return 'Jitsi Meet';
   const host = new URL(video.url).hostname.replace(/^www\./, '');
   if (host.includes('meet.google')) return 'Google Meet';
@@ -51,7 +54,7 @@ export function videoLabel(video) {
 /** Valor inicial del selector a partir del video actual de una clase. */
 export function videoOptionFrom(video) {
   if (!video) return { mode: 'none', link: '' };
-  return video.provider === 'jitsi' ? { mode: 'jitsi', link: '' } : { mode: 'link', link: video.url };
+  return video.provider === 'link' ? { mode: 'link', link: video.url } : { mode: 'propia', link: '' };
 }
 
 let videoWindow = null;

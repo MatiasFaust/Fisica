@@ -36,6 +36,8 @@ import { canDraw } from '../services/boardOps';
 import { endSession, saveClass, setSessionVideo } from '../services/classService';
 import { openVideoCall, videoLabel } from '../services/videoService';
 import VideoCallModal from '../components/modals/VideoCallModal';
+import VideoDock from '../components/whiteboard/VideoDock';
+import { useVideoCall } from '../hooks/useVideoCall';
 import {
   admit,
   ban,
@@ -195,6 +197,53 @@ function BoardRoom({ sessionId, session, isPractice }) {
   useEffect(() => {
     if (!isTeacher && board.kicked?.includes(user.id)) setRemoved('kicked');
   }, [board.kicked, isTeacher, user.id]);
+
+  /* ---------- Videollamada propia (dentro de la pizarra) ---------- */
+
+  const ownVideo = !isPractice && session?.video?.provider === 'propia';
+  const [videoOpen, setVideoOpen] = useState(false);
+  const [videoMinimized, setVideoMinimized] = useState(false);
+  const callApi = useVideoCall(sessionId, user, { enabled: ownVideo && !removed });
+  const openVideoDock = useCallback(() => {
+    setVideoOpen(true);
+    setVideoMinimized(false);
+  }, []);
+
+  // El alumno entra a la llamada al abrir el recuadro (y sale al cerrarlo).
+  useEffect(() => {
+    if (ownVideo && !isTeacher && videoOpen && !callApi.joined) callApi.join();
+  }, [ownVideo, isTeacher, videoOpen, callApi.joined, callApi.join]);
+
+  const closeVideoDock = () => {
+    setVideoOpen(false);
+    callApi.leave();
+  };
+
+  // Avisos: el profesor inició la transmisión / te dieron la palabra / alguien levantó la mano.
+  const callLive = Boolean(callApi.live);
+  const wasLive = useRef(callLive);
+  useEffect(() => {
+    if (!isTeacher && ownVideo && callLive && !wasLive.current && !videoOpen) {
+      toast.info('El profesor inició la videollamada', { action: { label: 'Unirme', onClick: openVideoDock }, duration: 10000 });
+    }
+    wasLive.current = callLive;
+  }, [callLive, isTeacher, ownVideo, videoOpen, openVideoDock, toast]);
+
+  useEffect(() => {
+    if (!isTeacher && callApi.isSpeaking) toast.success('Tenés la palabra: tu micrófono está encendido');
+  }, [callApi.isSpeaking, isTeacher, toast]);
+
+  const seenHands = useRef(new Set());
+  useEffect(() => {
+    if (!isTeacher) return;
+    Object.keys(callApi.hands).forEach((uid) => {
+      if (seenHands.current.has(uid)) return;
+      seenHands.current.add(uid);
+      const name = callApi.members[uid]?.name ?? 'Un alumno';
+      toast.info(`✋ ${name} levantó la mano`, { action: { label: 'Dar la palabra', onClick: () => callApi.setSpeaker(uid, true) }, duration: 10000 });
+    });
+    seenHands.current.forEach((uid) => !callApi.hands[uid] && seenHands.current.delete(uid));
+  }, [callApi.hands, callApi.members, callApi.setSpeaker, isTeacher, toast]);
 
   // Si el profesor abre o cambia la videollamada durante la clase, se avisa a los alumnos.
   const videoUrl = session?.video?.url;
@@ -395,7 +444,12 @@ function BoardRoom({ sessionId, session, isPractice }) {
             </button>
           </div>
           {!isPractice && session?.video && (
-            <button className="btn btn--video btn--sm" onClick={() => openVideoCall(session.video, user)} title={`Videollamada (${videoLabel(session.video)})`}>
+            <button
+              className="btn btn--video btn--sm"
+              onClick={() => (ownVideo ? openVideoDock() : openVideoCall(session.video, user))}
+              title={`Videollamada (${videoLabel(session.video)})`}
+            >
+              {ownVideo && callLive && <span className="live-dot live-dot--red" />}
               <Video size={17} /> <span className="hide-md">Videollamada</span>
             </button>
           )}
@@ -478,6 +532,19 @@ function BoardRoom({ sessionId, session, isPractice }) {
           onResetZoom={() => boardRef.current?.resetView()}
           onInsert={setInsertTab}
         />
+
+        {ownVideo && videoOpen && (
+          <div className={`vdock-wrap ${panel ? 'vdock-wrap--shifted' : ''}`}>
+            <VideoDock
+              callApi={callApi}
+              user={user}
+              isTeacher={isTeacher}
+              minimized={videoMinimized}
+              onMinimize={() => setVideoMinimized((value) => !value)}
+              onClose={closeVideoDock}
+            />
+          </div>
+        )}
 
         {isTeacher && !isPractice && (
           <ParticipantsPanel

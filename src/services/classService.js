@@ -12,7 +12,7 @@ import { uid } from '../utils/id';
  *  - waiting: los alumnos esperan a que el profesor los deje pasar
  *  - readOnly: entran solo mirando (el profesor les da permiso para escribir)
  */
-export async function createSession({ title, topicId, access = DEFAULT_ACCESS, video = { mode: 'jitsi' } }, user) {
+export async function createSession({ title, topicId, access = DEFAULT_ACCESS, video = { mode: 'propia' } }, user) {
   const id = uid('clase-');
   const session = {
     id,

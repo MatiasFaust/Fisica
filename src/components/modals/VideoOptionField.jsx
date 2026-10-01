@@ -2,18 +2,18 @@ import { Video } from 'lucide-react';
 import { isValidLink } from '../../services/videoService';
 
 const MODES = [
-  { value: 'jitsi', label: 'Automática' },
+  { value: 'propia', label: 'De la plataforma' },
   { value: 'link', label: 'Mi link' },
   { value: 'none', label: 'Sin video' },
 ];
 
 const HELP = {
-  jitsi: 'Se crea una sala de Jitsi Meet para esta clase: gratis y sin límite de tiempo. Al abrirla, Jitsi puede pedirte iniciar sesión con Google.',
-  link: 'Pegá el link de tu reunión de Google Meet, Zoom o Teams.',
+  propia: 'Video dentro de la pizarra: vos transmitís y los alumnos levantan la mano para hablar. Funciona mejor con hasta 15 alumnos.',
+  link: 'Pegá el link de tu reunión de Google Meet, Zoom o Teams (se abre en otra ventana).',
   none: 'La clase no va a tener videollamada. La podés agregar después.',
 };
 
-/** Selector de videollamada para una clase: automática (Jitsi), link propio o ninguna. */
+/** Selector de videollamada para una clase: de la plataforma, link propio o ninguna. */
 export default function VideoOptionField({ value, onChange }) {
   const linkInvalid = value.mode === 'link' && value.link.trim() !== '' && !isValidLink(value.link);
 

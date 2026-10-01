@@ -86,12 +86,18 @@ Durante la clase el profesor puede expulsar a un alumno (no puede volver a entra
 
 ### Videollamada
 
-Cada clase puede tener una videollamada que se abre **en una ventana aparte** de la pizarra (botón verde *Videollamada*):
+Cada clase puede tener videollamada (botón verde *Videollamada* en la pizarra):
 
-- **Automática:** se crea una sala de Jitsi Meet para la clase (gratis, sin límite de tiempo). Los alumnos entran con su nombre y el micrófono apagado.
-- **Mi link:** el profesor pega un link propio de Google Meet, Zoom o Teams.
+- **De la plataforma** (por defecto): video propio, **dentro de la pizarra**, hecho con WebRTC y sin servicios externos. Funciona como un aula: el profesor transmite cámara y micrófono; los alumnos miran y **levantan la mano ✋** para hablar; cuando el profesor les da la palabra, todos los escuchan (y los ven, si prenden la cámara). El recuadro se puede minimizar sin cortar el audio.
+- **Mi link:** el profesor pega un link de Google Meet, Zoom o Teams, que se abre en otra ventana.
 
 Solo la ven los alumnos que ya entraron a la clase (después de la sala de espera). El profesor la agrega o la cambia desde el ícono ⚙ junto al botón, o desde el menú ⋮ de la clase en *Pizarra en vivo*.
+
+**Límites de la videollamada propia:** el audio y el video van directo de navegador a navegador (Firebase solo conecta a los participantes), así que el profesor envía una copia a cada alumno. Con una conexión común funciona bien hasta unos **10–15 alumnos**. En redes muy cerradas (algunas escuelas o empresas) puede hacer falta un servidor TURN: se configura en `.env` con `VITE_TURN_URLS`, `VITE_TURN_USERNAME` y `VITE_TURN_CREDENTIAL` (por ejemplo, con la capa gratuita de Metered).
+
+### Reglas de seguridad
+
+`firestore.rules`, `storage.rules` y `database.rules.json`. Este último se genera con `node scripts/database-rules.mjs` (toma el email del profesor de `.env`) y se publica con `npx firebase-tools deploy --only database`.
 
 Esto lo garantizan las reglas de seguridad (`firestore.rules`, `database.rules.json`, `storage.rules`): una cuenta no aprobada no puede leer ni escribir nada, aunque intente acceder a la base directamente.
 

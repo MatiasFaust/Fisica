@@ -5,7 +5,7 @@ import UserAvatar from '../UserAvatar';
 import { DEFAULT_ACCESS } from '../../services/classAccessService';
 import VideoOptionField, { isVideoOptionValid } from './VideoOptionField';
 
-const initialForm = (title, topicId) => ({ title, topicId, access: { ...DEFAULT_ACCESS, allowed: [] }, video: { mode: 'jitsi', link: '' } });
+const initialForm = (title, topicId) => ({ title, topicId, access: { ...DEFAULT_ACCESS, allowed: [] }, video: { mode: 'propia', link: '' } });
 
 /**
  * Formulario de título + tema, usado para crear una clase en vivo y para guardarla.

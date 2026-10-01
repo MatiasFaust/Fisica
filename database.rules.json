@@ -59,6 +59,38 @@
           "$uid": {
             ".write": "auth != null && auth.uid == $uid && auth != null && root.child('members').child(auth.uid).val() == true && root.child('boards').child($sessionId).child('banned').child(auth.uid).val() != true && (!root.child('boards').child($sessionId).child('config').exists() || ((root.child('boards').child($sessionId).child('config').child('all').val() == true || root.child('boards').child($sessionId).child('allowed').child(auth.uid).val() == true) && (root.child('boards').child($sessionId).child('config').child('waiting').val() != true || root.child('boards').child($sessionId).child('admitted').child(auth.uid).val() == true)))"
           }
+        },
+        "call": {
+          "live": {
+            ".read": "auth != null && root.child('members').child(auth.uid).val() == true && root.child('boards').child($sessionId).child('banned').child(auth.uid).val() != true && (!root.child('boards').child($sessionId).child('config').exists() || ((root.child('boards').child($sessionId).child('config').child('all').val() == true || root.child('boards').child($sessionId).child('allowed').child(auth.uid).val() == true) && (root.child('boards').child($sessionId).child('config').child('waiting').val() != true || root.child('boards').child($sessionId).child('admitted').child(auth.uid).val() == true)))"
+          },
+          "members": {
+            ".read": "auth != null && root.child('members').child(auth.uid).val() == true && root.child('boards').child($sessionId).child('banned').child(auth.uid).val() != true && (!root.child('boards').child($sessionId).child('config').exists() || ((root.child('boards').child($sessionId).child('config').child('all').val() == true || root.child('boards').child($sessionId).child('allowed').child(auth.uid).val() == true) && (root.child('boards').child($sessionId).child('config').child('waiting').val() != true || root.child('boards').child($sessionId).child('admitted').child(auth.uid).val() == true)))",
+            "$uid": {
+              ".write": "auth != null && auth.uid == $uid && auth != null && root.child('members').child(auth.uid).val() == true && root.child('boards').child($sessionId).child('banned').child(auth.uid).val() != true && (!root.child('boards').child($sessionId).child('config').exists() || ((root.child('boards').child($sessionId).child('config').child('all').val() == true || root.child('boards').child($sessionId).child('allowed').child(auth.uid).val() == true) && (root.child('boards').child($sessionId).child('config').child('waiting').val() != true || root.child('boards').child($sessionId).child('admitted').child(auth.uid).val() == true)))"
+            }
+          },
+          "hands": {
+            ".read": "auth != null && root.child('members').child(auth.uid).val() == true && root.child('boards').child($sessionId).child('banned').child(auth.uid).val() != true && (!root.child('boards').child($sessionId).child('config').exists() || ((root.child('boards').child($sessionId).child('config').child('all').val() == true || root.child('boards').child($sessionId).child('allowed').child(auth.uid).val() == true) && (root.child('boards').child($sessionId).child('config').child('waiting').val() != true || root.child('boards').child($sessionId).child('admitted').child(auth.uid).val() == true)))",
+            "$uid": {
+              ".write": "auth != null && auth.uid == $uid && auth != null && root.child('members').child(auth.uid).val() == true && root.child('boards').child($sessionId).child('banned').child(auth.uid).val() != true && (!root.child('boards').child($sessionId).child('config').exists() || ((root.child('boards').child($sessionId).child('config').child('all').val() == true || root.child('boards').child($sessionId).child('allowed').child(auth.uid).val() == true) && (root.child('boards').child($sessionId).child('config').child('waiting').val() != true || root.child('boards').child($sessionId).child('admitted').child(auth.uid).val() == true)))"
+            }
+          },
+          "speakers": {
+            ".read": "auth != null && root.child('members').child(auth.uid).val() == true && root.child('boards').child($sessionId).child('banned').child(auth.uid).val() != true && (!root.child('boards').child($sessionId).child('config').exists() || ((root.child('boards').child($sessionId).child('config').child('all').val() == true || root.child('boards').child($sessionId).child('allowed').child(auth.uid).val() == true) && (root.child('boards').child($sessionId).child('config').child('waiting').val() != true || root.child('boards').child($sessionId).child('admitted').child(auth.uid).val() == true)))",
+            "$uid": {
+              ".write": "auth != null && auth.uid == $uid && !newData.exists()"
+            }
+          },
+          "signals": {
+            "$to": {
+              ".read": "auth != null && auth.uid == $to",
+              ".write": "auth != null && auth.uid == $to && !newData.exists()",
+              "$msg": {
+                ".write": "(auth != null && root.child('members').child(auth.uid).val() == true && root.child('boards').child($sessionId).child('banned').child(auth.uid).val() != true && (!root.child('boards').child($sessionId).child('config').exists() || ((root.child('boards').child($sessionId).child('config').child('all').val() == true || root.child('boards').child($sessionId).child('allowed').child(auth.uid).val() == true) && (root.child('boards').child($sessionId).child('config').child('waiting').val() != true || root.child('boards').child($sessionId).child('admitted').child(auth.uid).val() == true))) && !data.exists() && newData.child('from').val() == auth.uid) || (auth != null && auth.uid == $to && !newData.exists())"
+              }
+            }
+          }
         }
       }
     }

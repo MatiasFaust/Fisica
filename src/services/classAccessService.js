@@ -8,8 +8,7 @@
  * En modo Firebase se guarda en Realtime Database (boards/{sessionId}/...) y las reglas
  * de seguridad lo hacen cumplir. En modo demostración se guarda en el navegador.
  */
-import { onDisconnect, onValue, ref, update } from 'firebase/database';
-import { isFirebaseConfigured, rtdb } from './firebase';
+import { rtStore } from './rtStore';
 
 export const DEFAULT_ACCESS = { all: true, allowed: [], waiting: true, readOnly: true };
 
@@ -20,63 +19,7 @@ export function canSeeSession(session, user) {
   return !access || access.all || (access.allowed ?? []).includes(user.id);
 }
 
-/* ---------- Almacenamiento: Realtime Database o navegador ---------- */
-
-const cloudAdapter = {
-  watch: (path, callback) => onValue(ref(rtdb, path), (snapshot) => callback(snapshot.val()), () => callback(null)),
-  update: (base, changes) => update(ref(rtdb, base), changes),
-};
-
-const DEMO_KEY = 'fisica-class-access';
-const demoListeners = new Set();
-const readDemo = () => {
-  try {
-    return JSON.parse(localStorage.getItem(DEMO_KEY)) ?? {};
-  } catch {
-    return {};
-  }
-};
-const getAt = (tree, path) => path.split('/').reduce((node, key) => (node == null ? node : node[key]), tree) ?? null;
-function setAt(tree, path, value) {
-  const keys = path.split('/');
-  let node = tree;
-  keys.slice(0, -1).forEach((key) => {
-    if (typeof node[key] !== 'object' || node[key] === null) node[key] = {};
-    node = node[key];
-  });
-  if (value === null) delete node[keys.at(-1)];
-  else node[keys.at(-1)] = value;
-}
-function notifyDemo() {
-  const tree = readDemo();
-  demoListeners.forEach((listener) => {
-    const value = getAt(tree, listener.path);
-    const json = JSON.stringify(value);
-    if (json === listener.last) return;
-    listener.last = json;
-    listener.callback(value);
-  });
-}
-if (!isFirebaseConfigured) window.addEventListener('storage', (event) => event.key === DEMO_KEY && notifyDemo());
-
-const demoAdapter = {
-  watch(path, callback) {
-    const value = getAt(readDemo(), path);
-    const listener = { path, callback, last: JSON.stringify(value) };
-    demoListeners.add(listener);
-    callback(value);
-    return () => demoListeners.delete(listener);
-  },
-  update(base, changes) {
-    const tree = readDemo();
-    Object.entries(changes).forEach(([path, value]) => setAt(tree, `${base}/${path}`, value));
-    localStorage.setItem(DEMO_KEY, JSON.stringify(tree));
-    notifyDemo();
-    return Promise.resolve();
-  },
-};
-
-const store = isFirebaseConfigured ? cloudAdapter : demoAdapter;
+const store = rtStore;
 const base = (sessionId) => `boards/${sessionId}`;
 const toList = (value) => Object.entries(value ?? {}).map(([id, data]) => ({ id, ...(typeof data === 'object' ? data : {}) }));
 
@@ -109,6 +52,9 @@ export const ban = (sessionId, uid) =>
     [`presence/${uid}`]: null,
     [`cursors/${uid}`]: null,
     [`drafts/${uid}`]: null,
+    [`call/members/${uid}`]: null,
+    [`call/hands/${uid}`]: null,
+    [`call/speakers/${uid}`]: null,
   });
 
 export const unban = (sessionId, uid) => store.update(base(sessionId), { [`banned/${uid}`]: null, [`admitted/${uid}`]: true });
@@ -143,6 +89,6 @@ export function watchMyEntry(sessionId, uid, callback) {
 export function requestEntry(sessionId, user) {
   const path = `lobby/${user.id}`;
   store.update(base(sessionId), { [path]: { name: user.displayName, color: user.color, at: Date.now() } }).catch(() => {});
-  if (isFirebaseConfigured) onDisconnect(ref(rtdb, `${base(sessionId)}/${path}`)).remove();
+  store.removeOnDisconnect(`${base(sessionId)}/${path}`);
   return () => store.update(base(sessionId), { [path]: null }).catch(() => {});
 }

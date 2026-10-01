@@ -25,6 +25,7 @@ import UserAvatar from '../components/UserAvatar';
 import EmptyState from '../components/ui/EmptyState';
 import { getSubmission, DIFFICULTIES } from '../services/exerciseService';
 import { getPendingStudents, getStudents } from '../services/studentService';
+import { canSeeSession } from '../services/classAccessService';
 import { getTopicForFolder } from '../services/repositoryService';
 import { formatDue, formatLongDate, formatRelative, daysUntil } from '../utils/format';
 
@@ -59,7 +60,7 @@ export default function DashboardPage() {
 
   const publicFiles = useMemo(() => state.files.filter((file) => file.visibility !== 'private'), [state.files]);
   const latestFiles = useMemo(() => [...publicFiles].sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt)).slice(0, 5), [publicFiles]);
-  const liveSession = state.sessions.find((session) => session.active);
+  const liveSession = state.sessions.find((session) => session.active && canSeeSession(session, user));
   const students = getStudents(state);
   const pendingRequests = isTeacher ? getPendingStudents(state).length : 0;
 

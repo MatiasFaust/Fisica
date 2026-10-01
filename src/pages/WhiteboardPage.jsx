@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, FilePlus2, Users, Save, Power, Lock, UserX, Flag, Radio, PenLine } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, FilePlus2, Users, Save, Power, Lock, UserX, Flag, Radio, PenLine, DoorClosed } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useStore } from '../hooks/useStore';
@@ -17,6 +17,19 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ClassFormModal from '../components/modals/ClassFormModal';
 import { canDraw } from '../services/boardOps';
 import { endSession, saveClass } from '../services/classService';
+import {
+  admit,
+  ban,
+  canSeeSession,
+  rejectEntry,
+  requestEntry,
+  setWaitingRoom,
+  unban,
+  watchBanned,
+  watchConfig,
+  watchLobby,
+  watchMyEntry,
+} from '../services/classAccessService';
 import { getState } from '../services/store';
 import { uid } from '../utils/id';
 
@@ -33,10 +46,20 @@ export default function WhiteboardPage() {
   if (session && !session.active && !isTeacher) {
     return <BoardMessage icon={Flag} title="La clase terminó" text="Si el profesor la guardó, podés repasarla en Repositorio › Clases guardadas." showSaved />;
   }
-  return <BoardRoom key={sessionId} sessionId={sessionId} session={session} isPractice={isPractice} />;
+
+  const room = <BoardRoom key={sessionId} sessionId={sessionId} session={session} isPractice={isPractice} />;
+  if (isTeacher || isPractice) return room;
+  if (!canSeeSession(session, user)) {
+    return <BoardMessage icon={Lock} title="Esta clase es para otro grupo" text="El profesor no te incluyó en esta clase. Si creés que es un error, avisale." />;
+  }
+  return (
+    <StudentGate key={sessionId} sessionId={sessionId} session={session}>
+      {room}
+    </StudentGate>
+  );
 }
 
-function BoardMessage({ icon: Icon, title, text, showSaved }) {
+function BoardMessage({ icon: Icon, title, text, showSaved, children }) {
   return (
     <div className="board-message">
       <div className="board-message__card">
@@ -45,6 +68,7 @@ function BoardMessage({ icon: Icon, title, text, showSaved }) {
         </span>
         <h1>{title}</h1>
         <p>{text}</p>
+        {children}
         <div className="board-message__actions">
           {showSaved && (
             <Link to="/repositorio/clases-guardadas" className="btn btn--primary">
@@ -58,6 +82,46 @@ function BoardMessage({ icon: Icon, title, text, showSaved }) {
       </div>
     </div>
   );
+}
+
+/**
+ * Control de entrada del alumno: sala de espera y expulsiones.
+ * Sigue escuchando mientras el alumno está en la pizarra, así una expulsión lo saca al instante.
+ */
+function StudentGate({ sessionId, session, children }) {
+  const { user } = useAuth();
+  const userRef = useRef(user);
+  userRef.current = user;
+  const [entry, setEntry] = useState({ ready: false });
+
+  useEffect(() => watchMyEntry(sessionId, user.id, setEntry), [sessionId, user.id]);
+
+  const mustWait = entry.ready && entry.waiting && !entry.admitted && !entry.banned;
+  // Mientras espera, el alumno figura en la sala de espera del profesor.
+  useEffect(() => (mustWait ? requestEntry(sessionId, userRef.current) : undefined), [mustWait, sessionId]);
+
+  if (!entry.ready) {
+    return (
+      <div className="splash">
+        <p>Entrando a la clase…</p>
+      </div>
+    );
+  }
+  if (entry.banned) {
+    return <BoardMessage icon={UserX} title="No podés entrar a esta clase" text="El profesor te quitó de la sesión." />;
+  }
+  if (mustWait) {
+    return (
+      <BoardMessage icon={DoorClosed} title="Sala de espera" text={`Le avisamos al profesor que querés entrar a «${session.title}». Esta pantalla se abre sola cuando te deje pasar.`}>
+        <div className="waiting-dots" aria-label="Esperando">
+          <span />
+          <span />
+          <span />
+        </div>
+      </BoardMessage>
+    );
+  }
+  return children;
 }
 
 function BoardRoom({ sessionId, session, isPractice }) {
@@ -112,6 +176,49 @@ function BoardRoom({ sessionId, session, isPractice }) {
   useEffect(() => {
     if (!isTeacher && board.kicked?.includes(user.id)) setRemoved('kicked');
   }, [board.kicked, isTeacher, user.id]);
+
+  /* ---------- Sala de espera y expulsados (profesor) ---------- */
+
+  const managesAccess = isTeacher && !isPractice;
+  const [lobby, setLobby] = useState([]);
+  const [bannedIds, setBannedIds] = useState([]);
+  const [accessConfig, setAccessConfig] = useState(null);
+  const seenLobby = useRef(new Set());
+
+  useEffect(() => {
+    if (!managesAccess) return undefined;
+    const stops = [watchLobby(sessionId, setLobby), watchBanned(sessionId, setBannedIds), watchConfig(sessionId, setAccessConfig)];
+    return () => stops.forEach((stop) => stop());
+  }, [managesAccess, sessionId]);
+
+  // Aviso cuando alguien nuevo pide entrar, con un botón para dejarlo pasar.
+  useEffect(() => {
+    lobby.forEach((person) => {
+      if (seenLobby.current.has(person.id)) return;
+      seenLobby.current.add(person.id);
+      toast.info(`${person.name} quiere entrar a la clase`, {
+        action: { label: 'Dejar pasar', onClick: () => admit(sessionId, [person.id]) },
+        duration: 8000,
+      });
+    });
+    const waitingIds = new Set(lobby.map((person) => person.id));
+    seenLobby.current.forEach((id) => !waitingIds.has(id) && seenLobby.current.delete(id));
+  }, [lobby, sessionId, toast]);
+
+  const kickStudent = async (participant) => {
+    send({ type: 'kick', userId: participant.id });
+    await ban(sessionId, participant.id).catch(() => toast.error('No se pudo expulsar. Probá de nuevo.'));
+    toast.success(`${participant.name} fue quitado de la clase`);
+  };
+
+  const readmitStudent = async (userId) => {
+    send({ type: 'unkick', userId });
+    await unban(sessionId, userId).catch(() => toast.error('No se pudo readmitir. Probá de nuevo.'));
+  };
+
+  const bannedUsers = [...new Set([...bannedIds, ...(board.kicked ?? [])])]
+    .map((id) => state.users.find((u) => u.id === id))
+    .filter(Boolean);
 
   const pageIndex = Math.max(0, board.pages.findIndex((page) => page.id === pageId));
   const page = board.pages[pageIndex];
@@ -264,6 +371,11 @@ function BoardRoom({ sessionId, session, isPractice }) {
             <>
               <button className={`btn btn--ghost btn--sm ${panel ? 'is-active' : ''}`} onClick={() => setPanel((open) => !open)} title="Participantes">
                 <Users size={17} /> <span className="board-count">{others.length}</span>
+                {lobby.length > 0 && (
+                  <span className="board-count board-count--waiting" title="Esperando para entrar">
+                    {lobby.length} esperando
+                  </span>
+                )}
               </button>
               <button className="btn btn--soft btn--sm" onClick={() => setDialog('save')}>
                 <Save size={17} /> <span className="hide-md">Guardar clase</span>
@@ -278,7 +390,7 @@ function BoardRoom({ sessionId, session, isPractice }) {
 
       {!allowedToDraw && !removed && (
         <div className="board-banner">
-          <Lock size={16} /> El profesor bloqueó la escritura. Podés mirar y moverte por la pizarra.
+          <Lock size={16} /> Estás mirando la clase. Si el profesor te da permiso, vas a poder escribir.
         </div>
       )}
 
@@ -325,11 +437,16 @@ function BoardRoom({ sessionId, session, isPractice }) {
             open={panel}
             participants={participants}
             board={board}
-            users={state.users}
+            waiting={lobby}
+            bannedUsers={bannedUsers}
+            waitingRoom={accessConfig?.waiting === true}
+            onToggleWaitingRoom={(value) => setWaitingRoom(sessionId, value).catch(() => toast.error('No se pudo cambiar la sala de espera.'))}
+            onAdmit={(ids) => admit(sessionId, ids).catch(() => toast.error('No se pudo dejar pasar. Probá de nuevo.'))}
+            onReject={(id) => rejectEntry(sessionId, id).catch(() => toast.error('No se pudo rechazar. Probá de nuevo.'))}
             onClose={() => setPanel(false)}
             onTogglePermission={(userId, allowed) => send({ type: 'permission', userId, allowed })}
             onKick={(participant) => setDialog({ kick: participant })}
-            onReadmit={(userId) => send({ type: 'unkick', userId })}
+            onReadmit={readmitStudent}
             onLockAll={(locked) => {
               send({ type: 'lockAll', locked });
               toast.info(locked ? 'Los alumnos ahora solo pueden mirar' : 'Todos los alumnos pueden escribir');
@@ -388,10 +505,7 @@ function BoardRoom({ sessionId, session, isPractice }) {
         confirmLabel="Expulsar"
         danger
         onClose={() => setDialog(null)}
-        onConfirm={() => {
-          send({ type: 'kick', userId: dialog.kick.id });
-          toast.success(`${dialog.kick.name} fue quitado de la clase`);
-        }}
+        onConfirm={() => kickStudent(dialog.kick)}
       />
 
       {removed && (

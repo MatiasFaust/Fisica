@@ -988,6 +988,24 @@
   margin-top: 8px;
 }
 
+.session-card__access {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.session-card__access li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--gray-100);
+  color: var(--gray-600);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
 .live-badge {
   display: inline-flex;
   align-items: center;

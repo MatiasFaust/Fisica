@@ -74,6 +74,16 @@ La plataforma está publicada en **<https://fisica-aula.web.app>**, pero solo en
 3. La pantalla del alumno se actualiza sola y ya puede usar todo.
 4. Desde *Alumnos* el profesor puede **quitar el acceso** en cualquier momento (y devolverlo).
 
+### Quién entra a cada clase en vivo
+
+Al crear una clase el profesor elige:
+
+- **Para quiénes es:** todos los alumnos o algunos. Los demás no la ven ni pueden entrar, aunque tengan el link.
+- **Sala de espera:** los alumnos quedan esperando hasta que el profesor los deja pasar (de a uno o a todos). Se puede prender o apagar durante la clase desde *Participantes*.
+- **Entran solo a mirar:** nadie escribe hasta que el profesor le da permiso.
+
+Durante la clase el profesor puede expulsar a un alumno (no puede volver a entrar hasta que lo readmita).
+
 Esto lo garantizan las reglas de seguridad (`firestore.rules`, `database.rules.json`, `storage.rules`): una cuenta no aprobada no puede leer ni escribir nada, aunque intente acceder a la base directamente.
 
 Para **cambiar el email del profesor**: actualizarlo en `.env` (`VITE_TEACHER_EMAIL`), en `firestore.rules` y en `database.rules.json`, y volver a publicar (`firebase deploy`).

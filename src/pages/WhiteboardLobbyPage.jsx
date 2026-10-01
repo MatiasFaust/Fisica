@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Radio, PenLine, Presentation, ArrowRight, Power, Trash2, RotateCcw, Lightbulb, History } from 'lucide-react';
+import { Plus, Radio, PenLine, Presentation, ArrowRight, Power, Trash2, RotateCcw, Lightbulb, History, Users, DoorClosed, Eye } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useStore } from '../hooks/useStore';
@@ -10,7 +10,16 @@ import ActionMenu from '../components/ui/ActionMenu';
 import ClassFormModal from '../components/modals/ClassFormModal';
 import { createSession, deleteSession, endSession, reopenSession } from '../services/classService';
 import { sendBoardOp } from '../services/realtimeService';
+import { canSeeSession } from '../services/classAccessService';
+import { getStudents } from '../services/studentService';
 import { formatRelative, todayLabel } from '../utils/format';
+
+/** "Matías, Juan y 2 más" */
+function audienceLabel(allowed = [], users) {
+  const names = allowed.map((id) => users.find((u) => u.id === id)?.name).filter(Boolean);
+  if (names.length <= 2) return names.join(' y ') || 'Nadie';
+  return `${names.slice(0, 2).join(', ')} y ${names.length - 2} más`;
+}
 
 export default function WhiteboardLobbyPage() {
   const state = useStore();
@@ -19,7 +28,7 @@ export default function WhiteboardLobbyPage() {
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
 
-  const live = state.sessions.filter((s) => s.active);
+  const live = state.sessions.filter((s) => s.active && canSeeSession(s, user));
   const finished = state.sessions.filter((s) => !s.active);
   const topicOf = (session) => state.topics.find((t) => t.id === session.topicId);
 
@@ -78,6 +87,24 @@ export default function WhiteboardLobbyPage() {
                   <p className="muted">
                     {topic?.name ?? 'Sin tema'} · empezó {formatRelative(session.createdAt)}
                   </p>
+                  {isTeacher && session.access && (
+                    <ul className="session-card__access">
+                      <li>
+                        <Users size={14} />
+                        {session.access.all ? 'Todos los alumnos' : audienceLabel(session.access.allowed, state.users)}
+                      </li>
+                      {session.access.waiting && (
+                        <li>
+                          <DoorClosed size={14} /> Sala de espera
+                        </li>
+                      )}
+                      {session.access.readOnly && (
+                        <li>
+                          <Eye size={14} /> Entran a mirar
+                        </li>
+                      )}
+                    </ul>
+                  )}
                   <Link to={`/pizarra/${session.id}`} className="btn btn--primary btn--block">
                     Entrar a la pizarra <ArrowRight size={17} />
                   </Link>
@@ -166,16 +193,22 @@ export default function WhiteboardLobbyPage() {
       <ClassFormModal
         open={creating}
         title="Nueva clase en vivo"
-        subtitle="Los alumnos la verán en «Pizarra en vivo»."
+        subtitle="Elegí quiénes pueden entrar y cómo."
         confirmLabel="Crear y entrar"
         initialTitle={`Clase - ${todayLabel()}`}
         topics={state.topics}
+        students={getStudents(state)}
         onClose={() => setCreating(false)}
         onSubmit={async (form) => {
           const topic = state.topics.find((t) => t.id === form.topicId);
           const title = form.title === `Clase - ${todayLabel()}` && topic ? `Clase - ${topic.name} ${todayLabel()}` : form.title;
-          const session = await createSession({ title, topicId: form.topicId }, user);
-          navigate(`/pizarra/${session.id}`);
+          try {
+            const session = await createSession({ title, topicId: form.topicId, access: form.access }, user);
+            navigate(`/pizarra/${session.id}`);
+          } catch (error) {
+            console.error(error);
+            toast.error('No se pudo crear la clase. Probá de nuevo.');
+          }
         }}
       />
     </div>

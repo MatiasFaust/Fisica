@@ -543,3 +543,102 @@ button.wb-zoom:hover {
     display: none;
   }
 }
+
+/* ---------- Sala de espera ---------- */
+.board-count--waiting {
+  background: var(--warning-bg);
+  color: var(--warning);
+  animation: blink 1.6s infinite;
+}
+
+.wb-panel__toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--gray-50);
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--navy-800);
+  cursor: pointer;
+}
+
+.wb-panel__toggle svg {
+  color: var(--blue-600);
+}
+
+.wb-panel__toggle span {
+  flex: 1;
+}
+
+.wb-panel__waiting {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: var(--radius);
+  background: var(--warning-bg);
+  border: 1px solid #fde1b0;
+}
+
+.wb-panel__waiting-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wb-panel__waiting .wb-panel__subtitle {
+  margin: 0;
+  color: var(--warning);
+}
+
+.wb-participant.is-waiting:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.icon-btn--success {
+  color: var(--success);
+}
+
+.icon-btn--success:hover:not(:disabled) {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.waiting-dots {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 14px;
+}
+
+.waiting-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--blue-500);
+  animation: waiting-bounce 1.2s infinite ease-in-out;
+}
+
+.waiting-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.waiting-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes waiting-bounce {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

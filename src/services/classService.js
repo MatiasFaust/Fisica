@@ -1,11 +1,28 @@
 /** Clases en vivo (sesiones de pizarra) y clases guardadas. */
 import { updateState } from './store';
 import { withActivity } from './activityService';
-import { deleteBoard } from './realtimeService';
+import { deleteBoard, sendBoardOp } from './realtimeService';
+import { DEFAULT_ACCESS, initClassAccess } from './classAccessService';
 import { uid } from '../utils/id';
 
-export async function createSession({ title, topicId }, user) {
-  const session = { id: uid('clase-'), title: title.trim(), topicId: topicId || null, ownerId: user.id, createdAt: new Date().toISOString(), active: true };
+/**
+ * access: { all, allowed: [uid], waiting, readOnly }
+ *  - all / allowed: para quiénes es la clase
+ *  - waiting: los alumnos esperan a que el profesor los deje pasar
+ *  - readOnly: entran solo mirando (el profesor les da permiso para escribir)
+ */
+export async function createSession({ title, topicId, access = DEFAULT_ACCESS }, user) {
+  const session = {
+    id: uid('clase-'),
+    title: title.trim(),
+    topicId: topicId || null,
+    ownerId: user.id,
+    createdAt: new Date().toISOString(),
+    active: true,
+    access: { all: access.all, allowed: access.all ? [] : access.allowed, waiting: access.waiting, readOnly: access.readOnly },
+  };
+  await initClassAccess(session.id, access);
+  if (access.readOnly) await sendBoardOp(session.id, { type: 'lockAll', locked: true }, user);
   updateState((state) =>
     withActivity(
       { ...state, sessions: [session, ...state.sessions] },

@@ -10,26 +10,54 @@
     },
     "boards": {
       "$sessionId": {
-        ".read": "auth != null && (auth.token.email == 'mtsfaust@gmail.com' || root.child('members').child(auth.uid).val() == true)",
+        ".read": "auth != null && auth.token.email == 'mtsfaust@gmail.com'",
         ".write": "auth != null && auth.token.email == 'mtsfaust@gmail.com'",
+        "config": {
+          ".read": "auth != null && root.child('members').child(auth.uid).val() == true"
+        },
+        "allowed": {
+          "$uid": {
+            ".read": "auth != null && auth.uid == $uid"
+          }
+        },
+        "admitted": {
+          "$uid": {
+            ".read": "auth != null && auth.uid == $uid"
+          }
+        },
+        "banned": {
+          "$uid": {
+            ".read": "auth != null && auth.uid == $uid"
+          }
+        },
+        "lobby": {
+          "$uid": {
+            ".read": "auth != null && auth.uid == $uid",
+            ".write": "auth != null && auth.uid == $uid && root.child('members').child(auth.uid).val() == true && root.child('boards').child($sessionId).child('banned').child(auth.uid).val() != true && (!root.child('boards').child($sessionId).child('config').exists() || (root.child('boards').child($sessionId).child('config').child('all').val() == true || root.child('boards').child($sessionId).child('allowed').child(auth.uid).val() == true))"
+          }
+        },
         "ops": {
+          ".read": "auth != null && root.child('members').child(auth.uid).val() == true && root.child('boards').child($sessionId).child('banned').child(auth.uid).val() != true && (!root.child('boards').child($sessionId).child('config').exists() || ((root.child('boards').child($sessionId).child('config').child('all').val() == true || root.child('boards').child($sessionId).child('allowed').child(auth.uid).val() == true) && (root.child('boards').child($sessionId).child('config').child('waiting').val() != true || root.child('boards').child($sessionId).child('admitted').child(auth.uid).val() == true)))",
           "$opId": {
-            ".write": "auth != null && root.child('members').child(auth.uid).val() == true && !data.exists()"
+            ".write": "auth != null && root.child('members').child(auth.uid).val() == true && root.child('boards').child($sessionId).child('banned').child(auth.uid).val() != true && (!root.child('boards').child($sessionId).child('config').exists() || ((root.child('boards').child($sessionId).child('config').child('all').val() == true || root.child('boards').child($sessionId).child('allowed').child(auth.uid).val() == true) && (root.child('boards').child($sessionId).child('config').child('waiting').val() != true || root.child('boards').child($sessionId).child('admitted').child(auth.uid).val() == true))) && !data.exists()"
           }
         },
         "presence": {
+          ".read": "auth != null && root.child('members').child(auth.uid).val() == true && root.child('boards').child($sessionId).child('banned').child(auth.uid).val() != true && (!root.child('boards').child($sessionId).child('config').exists() || ((root.child('boards').child($sessionId).child('config').child('all').val() == true || root.child('boards').child($sessionId).child('allowed').child(auth.uid).val() == true) && (root.child('boards').child($sessionId).child('config').child('waiting').val() != true || root.child('boards').child($sessionId).child('admitted').child(auth.uid).val() == true)))",
           "$uid": {
-            ".write": "auth != null && auth.uid == $uid && root.child('members').child(auth.uid).val() == true"
+            ".write": "auth != null && auth.uid == $uid && auth != null && root.child('members').child(auth.uid).val() == true && root.child('boards').child($sessionId).child('banned').child(auth.uid).val() != true && (!root.child('boards').child($sessionId).child('config').exists() || ((root.child('boards').child($sessionId).child('config').child('all').val() == true || root.child('boards').child($sessionId).child('allowed').child(auth.uid).val() == true) && (root.child('boards').child($sessionId).child('config').child('waiting').val() != true || root.child('boards').child($sessionId).child('admitted').child(auth.uid).val() == true)))"
           }
         },
         "cursors": {
+          ".read": "auth != null && root.child('members').child(auth.uid).val() == true && root.child('boards').child($sessionId).child('banned').child(auth.uid).val() != true && (!root.child('boards').child($sessionId).child('config').exists() || ((root.child('boards').child($sessionId).child('config').child('all').val() == true || root.child('boards').child($sessionId).child('allowed').child(auth.uid).val() == true) && (root.child('boards').child($sessionId).child('config').child('waiting').val() != true || root.child('boards').child($sessionId).child('admitted').child(auth.uid).val() == true)))",
           "$uid": {
-            ".write": "auth != null && auth.uid == $uid && root.child('members').child(auth.uid).val() == true"
+            ".write": "auth != null && auth.uid == $uid && auth != null && root.child('members').child(auth.uid).val() == true && root.child('boards').child($sessionId).child('banned').child(auth.uid).val() != true && (!root.child('boards').child($sessionId).child('config').exists() || ((root.child('boards').child($sessionId).child('config').child('all').val() == true || root.child('boards').child($sessionId).child('allowed').child(auth.uid).val() == true) && (root.child('boards').child($sessionId).child('config').child('waiting').val() != true || root.child('boards').child($sessionId).child('admitted').child(auth.uid).val() == true)))"
           }
         },
         "drafts": {
+          ".read": "auth != null && root.child('members').child(auth.uid).val() == true && root.child('boards').child($sessionId).child('banned').child(auth.uid).val() != true && (!root.child('boards').child($sessionId).child('config').exists() || ((root.child('boards').child($sessionId).child('config').child('all').val() == true || root.child('boards').child($sessionId).child('allowed').child(auth.uid).val() == true) && (root.child('boards').child($sessionId).child('config').child('waiting').val() != true || root.child('boards').child($sessionId).child('admitted').child(auth.uid).val() == true)))",
           "$uid": {
-            ".write": "auth != null && auth.uid == $uid && root.child('members').child(auth.uid).val() == true"
+            ".write": "auth != null && auth.uid == $uid && auth != null && root.child('members').child(auth.uid).val() == true && root.child('boards').child($sessionId).child('banned').child(auth.uid).val() != true && (!root.child('boards').child($sessionId).child('config').exists() || ((root.child('boards').child($sessionId).child('config').child('all').val() == true || root.child('boards').child($sessionId).child('allowed').child(auth.uid).val() == true) && (root.child('boards').child($sessionId).child('config').child('waiting').val() != true || root.child('boards').child($sessionId).child('admitted').child(auth.uid).val() == true)))"
           }
         }
       }

@@ -4,6 +4,7 @@ import { Menu, Search, Radio } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../hooks/useStore';
 import UserAvatar from '../UserAvatar';
+import { canSeeSession } from '../../services/classAccessService';
 
 export default function Navbar({ onMenu }) {
   const { user, isTeacher } = useAuth();
@@ -12,7 +13,7 @@ export default function Navbar({ onMenu }) {
   const location = useLocation();
   const [params] = useSearchParams();
   const [query, setQuery] = useState(params.get('q') ?? '');
-  const liveSession = sessions.find((session) => session.active);
+  const liveSession = sessions.find((session) => session.active && canSeeSession(session, user));
 
   // Mantiene el buscador sincronizado con la URL (por ejemplo, al limpiar la búsqueda).
   useEffect(() => {

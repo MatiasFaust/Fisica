@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../hooks/useStore';
 import UserAvatar from '../UserAvatar';
 import { getPendingStudents } from '../../services/studentService';
+import { canSeeSession } from '../../services/classAccessService';
 import logo from '../../assets/logo.svg';
 
 const NAV_ITEMS = [
@@ -21,7 +22,7 @@ export default function Sidebar({ open, onClose }) {
   const { user, isTeacher, logout } = useAuth();
   const state = useStore();
   const navigate = useNavigate();
-  const liveCount = state.sessions.filter((session) => session.active).length;
+  const liveCount = state.sessions.filter((session) => session.active && canSeeSession(session, user)).length;
   const pendingCount = isTeacher ? getPendingStudents(state).length : 0;
 
   const handleLogout = async () => {

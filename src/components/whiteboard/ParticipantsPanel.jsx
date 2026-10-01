@@ -1,11 +1,24 @@
-import { Lock, LockOpen, UserX, X, PenLine, PenOff, UserCheck } from 'lucide-react';
+import { Lock, LockOpen, UserX, X, PenLine, PenOff, UserCheck, DoorClosed, Check } from 'lucide-react';
 import UserAvatar from '../UserAvatar';
 import { canDraw } from '../../services/boardOps';
 
-/** Panel del profesor: quién está conectado y qué puede hacer cada alumno. */
-export default function ParticipantsPanel({ open, participants, board, users, onClose, onTogglePermission, onKick, onReadmit, onLockAll }) {
-  const kicked = users.filter((user) => board.kicked?.includes(user.id));
-
+/** Panel del profesor: sala de espera, quién está conectado y qué puede hacer cada alumno. */
+export default function ParticipantsPanel({
+  open,
+  participants,
+  board,
+  waiting = [],
+  bannedUsers = [],
+  waitingRoom,
+  onToggleWaitingRoom,
+  onAdmit,
+  onReject,
+  onClose,
+  onTogglePermission,
+  onKick,
+  onReadmit,
+  onLockAll,
+}) {
   return (
     <aside className={`wb-panel ${open ? 'is-open' : ''}`} aria-hidden={!open}>
       <header className="wb-panel__header">
@@ -15,12 +28,50 @@ export default function ParticipantsPanel({ open, participants, board, users, on
         </button>
       </header>
 
+      <label className="wb-panel__toggle">
+        <DoorClosed size={17} />
+        <span>Sala de espera</span>
+        <input type="checkbox" className="switch" checked={waitingRoom} onChange={(event) => onToggleWaitingRoom(event.target.checked)} />
+      </label>
+
+      {waiting.length > 0 && (
+        <section className="wb-panel__waiting">
+          <div className="wb-panel__waiting-head">
+            <p className="wb-panel__subtitle">Esperando para entrar ({waiting.length})</p>
+            {waiting.length > 1 && (
+              <button className="btn btn--primary btn--sm" onClick={() => onAdmit(waiting.map((person) => person.id))}>
+                Dejar pasar a todos
+              </button>
+            )}
+          </div>
+          <ul className="wb-panel__list">
+            {waiting.map((person) => (
+              <li key={person.id} className="wb-participant is-waiting">
+                <UserAvatar user={{ ...person, displayName: person.name }} size={34} />
+                <div className="wb-participant__info">
+                  <strong>{person.name}</strong>
+                  <span>Quiere entrar</span>
+                </div>
+                <div className="wb-participant__actions">
+                  <button className="icon-btn icon-btn--danger" onClick={() => onReject(person.id)} title="Rechazar" aria-label="Rechazar">
+                    <X size={17} />
+                  </button>
+                  <button className="icon-btn icon-btn--success" onClick={() => onAdmit([person.id])} title="Dejar pasar" aria-label="Dejar pasar">
+                    <Check size={17} />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <div className="wb-panel__actions">
         <button className="btn btn--soft btn--sm" onClick={() => onLockAll(true)}>
-          <Lock size={15} /> Bloquear a todos
+          <Lock size={15} /> Solo mirar (todos)
         </button>
         <button className="btn btn--soft btn--sm" onClick={() => onLockAll(false)}>
-          <LockOpen size={15} /> Permitir a todos
+          <LockOpen size={15} /> Todos escriben
         </button>
       </div>
 
@@ -40,8 +91,8 @@ export default function ParticipantsPanel({ open, participants, board, users, on
                   <button
                     className={`icon-btn ${allowed ? '' : 'icon-btn--warning'}`}
                     onClick={() => onTogglePermission(participant.id, !allowed)}
-                    title={allowed ? 'Bloquear escritura' : 'Permitir escritura'}
-                    aria-label={allowed ? 'Bloquear escritura' : 'Permitir escritura'}
+                    title={allowed ? 'Quitar permiso para escribir' : 'Dar permiso para escribir'}
+                    aria-label={allowed ? 'Quitar permiso para escribir' : 'Dar permiso para escribir'}
                   >
                     {allowed ? <PenLine size={17} /> : <PenOff size={17} />}
                   </button>
@@ -55,11 +106,11 @@ export default function ParticipantsPanel({ open, participants, board, users, on
         })}
       </ul>
 
-      {kicked.length > 0 && (
+      {bannedUsers.length > 0 && (
         <>
-          <p className="wb-panel__subtitle">Expulsados</p>
+          <p className="wb-panel__subtitle">Sin acceso a esta clase</p>
           <ul className="wb-panel__list">
-            {kicked.map((user) => (
+            {bannedUsers.map((user) => (
               <li key={user.id} className="wb-participant is-muted">
                 <UserAvatar user={user} size={30} />
                 <div className="wb-participant__info">

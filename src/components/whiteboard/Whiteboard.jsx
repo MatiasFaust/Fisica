@@ -115,6 +115,8 @@ export default function Whiteboard({
   useEffect(() => {
     const container = containerRef.current;
     const observer = new ResizeObserver(() => {
+      // Puede llegar un aviso tardío cuando la pizarra ya se cerró.
+      if (!bgRef.current || !inkRef.current) return;
       const { width, height } = container.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       viewport.current = { width, height, dpr };

@@ -84,6 +84,15 @@ Al crear una clase el profesor elige:
 
 Durante la clase el profesor puede expulsar a un alumno (no puede volver a entrar hasta que lo readmita).
 
+### Videollamada
+
+Cada clase puede tener una videollamada que se abre **en una ventana aparte** de la pizarra (botón verde *Videollamada*):
+
+- **Automática:** se crea una sala de Jitsi Meet para la clase (gratis, sin límite de tiempo). Los alumnos entran con su nombre y el micrófono apagado.
+- **Mi link:** el profesor pega un link propio de Google Meet, Zoom o Teams.
+
+Solo la ven los alumnos que ya entraron a la clase (después de la sala de espera). El profesor la agrega o la cambia desde el ícono ⚙ junto al botón, o desde el menú ⋮ de la clase en *Pizarra en vivo*.
+
 Esto lo garantizan las reglas de seguridad (`firestore.rules`, `database.rules.json`, `storage.rules`): una cuenta no aprobada no puede leer ni escribir nada, aunque intente acceder a la base directamente.
 
 Para **cambiar el email del profesor**: actualizarlo en `.env` (`VITE_TEACHER_EMAIL`), en `firestore.rules` y en `database.rules.json`, y volver a publicar (`firebase deploy`).

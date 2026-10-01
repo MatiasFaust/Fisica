@@ -1353,3 +1353,27 @@
 .switch:checked::after {
   transform: translateX(18px);
 }
+
+/* ---------- Videollamada ---------- */
+.segmented--3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.field__help {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.field__help--error {
+  color: var(--danger);
+}
+
+.btn--video {
+  background: #e8f7ee;
+  color: #15803d;
+  border-color: #c9ecd6;
+}
+
+.btn--video:hover:not(:disabled) {
+  background: #d4f1df;
+}

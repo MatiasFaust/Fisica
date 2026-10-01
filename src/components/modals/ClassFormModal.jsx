@@ -3,8 +3,9 @@ import { Check, DoorClosed, Eye, Users } from 'lucide-react';
 import Modal from '../ui/Modal';
 import UserAvatar from '../UserAvatar';
 import { DEFAULT_ACCESS } from '../../services/classAccessService';
+import VideoOptionField, { isVideoOptionValid } from './VideoOptionField';
 
-const initialForm = (title, topicId) => ({ title, topicId, access: { ...DEFAULT_ACCESS, allowed: [] } });
+const initialForm = (title, topicId) => ({ title, topicId, access: { ...DEFAULT_ACCESS, allowed: [] }, video: { mode: 'jitsi', link: '' } });
 
 /**
  * Formulario de título + tema, usado para crear una clase en vivo y para guardarla.
@@ -29,6 +30,7 @@ export default function ClassFormModal({ open, title, subtitle, confirmLabel, in
   };
 
   const missingStudents = students && !access.all && access.allowed.length === 0;
+  const invalidVideo = students && !isVideoOptionValid(form.video);
 
   return (
     <Modal open={open} title={title} subtitle={subtitle} onClose={onClose} size={students ? 'md' : 'sm'}>
@@ -102,6 +104,8 @@ export default function ClassFormModal({ open, title, subtitle, confirmLabel, in
               </span>
               <input type="checkbox" className="switch" checked={access.readOnly} onChange={(event) => setAccess({ readOnly: event.target.checked })} />
             </label>
+
+            <VideoOptionField value={form.video} onChange={(video) => setForm({ ...form, video })} />
           </>
         )}
 
@@ -110,7 +114,7 @@ export default function ClassFormModal({ open, title, subtitle, confirmLabel, in
           <button type="button" className="btn btn--ghost" onClick={onClose}>
             Cancelar
           </button>
-          <button type="submit" className="btn btn--primary" disabled={!form.title.trim() || missingStudents}>
+          <button type="submit" className="btn btn--primary" disabled={!form.title.trim() || missingStudents || invalidVideo}>
             {confirmLabel}
           </button>
         </div>

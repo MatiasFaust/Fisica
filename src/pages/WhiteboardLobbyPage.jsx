@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Radio, PenLine, Presentation, ArrowRight, Power, Trash2, RotateCcw, Lightbulb, History, Users, DoorClosed, Eye } from 'lucide-react';
+import { Plus, Radio, PenLine, Presentation, ArrowRight, Power, Trash2, RotateCcw, Lightbulb, History, Users, DoorClosed, Eye, Video } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useStore } from '../hooks/useStore';
@@ -8,7 +8,9 @@ import PageHeader from '../components/ui/PageHeader';
 import EmptyState from '../components/ui/EmptyState';
 import ActionMenu from '../components/ui/ActionMenu';
 import ClassFormModal from '../components/modals/ClassFormModal';
-import { createSession, deleteSession, endSession, reopenSession } from '../services/classService';
+import VideoCallModal from '../components/modals/VideoCallModal';
+import { createSession, deleteSession, endSession, reopenSession, setSessionVideo } from '../services/classService';
+import { videoLabel } from '../services/videoService';
 import { sendBoardOp } from '../services/realtimeService';
 import { canSeeSession } from '../services/classAccessService';
 import { getStudents } from '../services/studentService';
@@ -27,6 +29,7 @@ export default function WhiteboardLobbyPage() {
   const toast = useToast();
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
+  const [videoSession, setVideoSession] = useState(null);
 
   const live = state.sessions.filter((s) => s.active && canSeeSession(s, user));
   const finished = state.sessions.filter((s) => !s.active);
@@ -78,6 +81,7 @@ export default function WhiteboardLobbyPage() {
                               toast.success('Clase terminada');
                             },
                           },
+                          { label: 'Videollamada…', icon: Video, onClick: () => setVideoSession(session) },
                           { label: 'Eliminar', icon: Trash2, danger: true, onClick: () => deleteSession(session.id) },
                         ]}
                       />
@@ -87,6 +91,11 @@ export default function WhiteboardLobbyPage() {
                   <p className="muted">
                     {topic?.name ?? 'Sin tema'} · empezó {formatRelative(session.createdAt)}
                   </p>
+                  {session.video && (
+                    <p className="session-card__video">
+                      <Video size={15} /> Con videollamada · {videoLabel(session.video)}
+                    </p>
+                  )}
                   {isTeacher && session.access && (
                     <ul className="session-card__access">
                       <li>
@@ -190,6 +199,16 @@ export default function WhiteboardLobbyPage() {
         </aside>
       )}
 
+      <VideoCallModal
+        open={Boolean(videoSession)}
+        session={videoSession}
+        onClose={() => setVideoSession(null)}
+        onSave={async (option) => {
+          await setSessionVideo(videoSession, option);
+          toast.success(option.mode === 'none' ? 'Videollamada quitada' : 'Videollamada guardada');
+        }}
+      />
+
       <ClassFormModal
         open={creating}
         title="Nueva clase en vivo"
@@ -203,7 +222,7 @@ export default function WhiteboardLobbyPage() {
           const topic = state.topics.find((t) => t.id === form.topicId);
           const title = form.title === `Clase - ${todayLabel()}` && topic ? `Clase - ${topic.name} ${todayLabel()}` : form.title;
           try {
-            const session = await createSession({ title, topicId: form.topicId, access: form.access }, user);
+            const session = await createSession({ title, topicId: form.topicId, access: form.access, video: form.video }, user);
             navigate(`/pizarra/${session.id}`);
           } catch (error) {
             console.error(error);

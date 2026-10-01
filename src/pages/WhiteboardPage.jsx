@@ -1,6 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, FilePlus2, Users, Save, Power, Lock, UserX, Flag, Radio, PenLine, DoorClosed } from 'lucide-react';
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  FilePlus2,
+  Users,
+  Save,
+  Power,
+  Lock,
+  UserX,
+  Flag,
+  Radio,
+  PenLine,
+  DoorClosed,
+  Video,
+  VideoOff,
+  Settings2,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useStore } from '../hooks/useStore';
@@ -16,7 +33,9 @@ import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ClassFormModal from '../components/modals/ClassFormModal';
 import { canDraw } from '../services/boardOps';
-import { endSession, saveClass } from '../services/classService';
+import { endSession, saveClass, setSessionVideo } from '../services/classService';
+import { openVideoCall, videoLabel } from '../services/videoService';
+import VideoCallModal from '../components/modals/VideoCallModal';
 import {
   admit,
   ban,
@@ -176,6 +195,19 @@ function BoardRoom({ sessionId, session, isPractice }) {
   useEffect(() => {
     if (!isTeacher && board.kicked?.includes(user.id)) setRemoved('kicked');
   }, [board.kicked, isTeacher, user.id]);
+
+  // Si el profesor abre o cambia la videollamada durante la clase, se avisa a los alumnos.
+  const videoUrl = session?.video?.url;
+  const previousVideoUrl = useRef(videoUrl);
+  useEffect(() => {
+    if (!isTeacher && videoUrl && videoUrl !== previousVideoUrl.current) {
+      toast.info('El profesor abrió una videollamada', {
+        action: { label: 'Unirme', onClick: () => openVideoCall(session.video, user) },
+        duration: 10000,
+      });
+    }
+    previousVideoUrl.current = videoUrl;
+  }, [videoUrl, isTeacher, session, user, toast]);
 
   /* ---------- Sala de espera y expulsados (profesor) ---------- */
 
@@ -362,6 +394,21 @@ function BoardRoom({ sessionId, session, isPractice }) {
               <ChevronRight size={18} />
             </button>
           </div>
+          {!isPractice && session?.video && (
+            <button className="btn btn--video btn--sm" onClick={() => openVideoCall(session.video, user)} title={`Videollamada (${videoLabel(session.video)})`}>
+              <Video size={17} /> <span className="hide-md">Videollamada</span>
+            </button>
+          )}
+          {isTeacher && !isPractice && (
+            <button
+              className="icon-btn icon-btn--sm"
+              onClick={() => setDialog('video')}
+              title={session?.video ? 'Cambiar videollamada' : 'Agregar videollamada'}
+              aria-label={session?.video ? 'Cambiar videollamada' : 'Agregar videollamada'}
+            >
+              {session?.video ? <Settings2 size={16} /> : <VideoOff size={16} />}
+            </button>
+          )}
           {isHost && (
             <button className="btn btn--ghost btn--sm" onClick={newPage} title="Nueva hoja">
               <FilePlus2 size={17} /> <span className="hide-md">Nueva hoja</span>
@@ -456,6 +503,18 @@ function BoardRoom({ sessionId, session, isPractice }) {
       </div>
 
       <InsertModal open={Boolean(insertTab)} initialTab={insertTab ?? 'exercise'} onClose={() => setInsertTab(null)} onPick={insert} />
+
+      {isTeacher && !isPractice && (
+        <VideoCallModal
+          open={dialog === 'video'}
+          session={session}
+          onClose={() => setDialog(null)}
+          onSave={async (option) => {
+            await setSessionVideo(session, option);
+            toast.success(option.mode === 'none' ? 'Videollamada quitada' : 'Videollamada lista: tocá «Videollamada» para abrirla');
+          }}
+        />
+      )}
 
       <ClassFormModal
         open={dialog === 'save'}

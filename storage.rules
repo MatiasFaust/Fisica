@@ -1,12 +1,18 @@
 rules_version = '2';
 
-// Reglas de Firebase Storage: archivos de hasta 25 MB, solo para usuarios con cuenta.
+// Reglas de Firebase Storage: solo el profesor y los alumnos aprobados, archivos de hasta 25 MB.
+// (El perfil del profesor también tiene status 'approved'.)
 service firebase.storage {
   match /b/{bucket}/o {
+    function isMember() {
+      return request.auth != null
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.status == 'approved';
+    }
+
     match /files/{fileId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.resource.size < 25 * 1024 * 1024;
-      allow delete: if request.auth != null;
+      allow read: if isMember();
+      allow write: if isMember() && request.resource.size < 25 * 1024 * 1024;
+      allow delete: if isMember();
     }
   }
 }

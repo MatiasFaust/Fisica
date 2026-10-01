@@ -1,69 +1,90 @@
 rules_version = '2';
 
 // Reglas de Firestore.
-// IMPORTANTE: el email de la regla de "users" tiene que ser el mismo que VITE_TEACHER_EMAIL.
+// Solo el profesor y los alumnos que él aprobó pueden leer o modificar datos del curso.
+// IMPORTANTE: el email del profesor tiene que coincidir con VITE_TEACHER_EMAIL (.env)
+// y con el de database.rules.json.
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
       return request.auth != null;
     }
+    function hasProfile() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    function myProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
     function isTeacher() {
-      return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+      return hasProfile() && myProfile().role == 'teacher';
+    }
+    function isMember() {
+      return hasProfile() && (myProfile().role == 'teacher' || myProfile().status == 'approved');
     }
 
-    // Perfiles: cada uno crea el suyo. Solo el email del profesor puede tener rol de profesor,
-    // y nadie puede cambiarse el rol después.
     match /users/{userId} {
-      allow read: if signedIn();
-      allow create: if request.auth.uid == userId
-        && (request.resource.data.role == 'student'
-            || (request.resource.data.role == 'teacher' && request.auth.token.email == 'mtsfaust@gmail.com'));
-      allow update: if request.auth.uid == userId && request.resource.data.role == resource.data.role;
+      // Cada uno ve su propio perfil (para saber si ya lo aprobaron); los miembros ven a todos.
+      allow read: if (signedIn() && request.auth.uid == userId) || isMember();
+      // Los alumnos se crean "pendientes". Solo el email del profesor puede tener el perfil de profesor.
+      allow create: if signedIn() && request.auth.uid == userId
+        && request.resource.data.email == request.auth.token.email.lower()
+        && ((request.resource.data.role == 'student' && request.resource.data.status == 'pending')
+            || (request.resource.data.role == 'teacher' && request.resource.data.status == 'approved'
+                && request.auth.token.email.lower() == 'mtsfaust@gmail.com'));
+      // Cada uno edita su nombre y color, pero no su rol ni su estado.
+      // El profesor aprueba o bloquea alumnos (sin poder cambiarles el rol).
+      allow update: if (signedIn() && request.auth.uid == userId
+            && request.resource.data.role == resource.data.role
+            && request.resource.data.status == resource.data.status)
+        || (isTeacher() && request.resource.data.role == resource.data.role);
+      allow delete: if isTeacher();
     }
 
-    // Material del curso: lo ve todo alumno con cuenta, lo modifica solo el profesor.
+    // Material del curso: lo ven los miembros, lo modifica solo el profesor.
     match /folders/{id} {
-      allow read: if signedIn();
+      allow read: if isMember();
       allow write: if isTeacher();
     }
     match /topics/{id} {
-      allow read: if signedIn();
+      allow read: if isMember();
       allow write: if isTeacher();
     }
     match /exercises/{id} {
-      allow read: if signedIn();
+      allow read: if isMember();
       allow write: if isTeacher();
     }
     match /sessions/{id} {
-      allow read: if signedIn();
+      allow read: if isMember();
       allow write: if isTeacher();
     }
     match /savedClasses/{id} {
-      allow read: if signedIn();
+      allow read: if isMember();
       allow write: if isTeacher();
     }
 
-    // Archivos: los públicos los sube el profesor; cada alumno puede subir y borrar los suyos privados.
-    // (La lectura es general porque la app escucha la colección completa; la interfaz
-    // solo muestra a cada alumno sus propios archivos privados.)
+    // Archivos: los públicos los sube el profesor; cada alumno maneja solo sus archivos privados.
     match /files/{id} {
-      allow read: if signedIn();
+      allow read: if isMember();
       allow create: if isTeacher()
-        || (signedIn() && request.resource.data.visibility == 'private' && request.resource.data.ownerId == request.auth.uid);
-      allow update, delete: if isTeacher() || (signedIn() && resource.data.ownerId == request.auth.uid);
+        || (isMember() && request.resource.data.visibility == 'private' && request.resource.data.ownerId == request.auth.uid);
+      allow update: if isTeacher()
+        || (isMember() && resource.data.ownerId == request.auth.uid
+            && request.resource.data.ownerId == request.auth.uid && request.resource.data.visibility == 'private');
+      allow delete: if isTeacher() || (isMember() && resource.data.ownerId == request.auth.uid);
     }
 
-    // Entregas: cada alumno maneja las suyas; el profesor las ve todas.
+    // Entregas: cada alumno maneja solo las suyas; el profesor ve todas.
     match /submissions/{id} {
-      allow read: if signedIn();
-      allow create, update: if signedIn() && request.resource.data.studentId == request.auth.uid;
-      allow delete: if isTeacher() || (signedIn() && resource.data.studentId == request.auth.uid);
+      allow read: if isMember();
+      allow create: if isMember() && request.resource.data.studentId == request.auth.uid;
+      allow update: if isMember() && resource.data.studentId == request.auth.uid && request.resource.data.studentId == request.auth.uid;
+      allow delete: if isTeacher() || (isMember() && resource.data.studentId == request.auth.uid);
     }
 
-    // Actividad reciente: cualquiera registra la propia.
+    // Actividad reciente: cada miembro registra la propia.
     match /activity/{id} {
-      allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if isMember();
+      allow create: if isMember() && request.resource.data.userId == request.auth.uid;
       allow delete: if isTeacher();
     }
   }

@@ -10,6 +10,7 @@ import EmptyState from '../components/ui/EmptyState';
 import ExerciseCard from '../components/ExerciseCard';
 import ExerciseFormModal from '../components/modals/ExerciseFormModal';
 import { createExercise, getSubmission } from '../services/exerciseService';
+import { getStudents } from '../services/studentService';
 import { daysUntil } from '../utils/format';
 
 export default function ExercisesPage() {
@@ -19,12 +20,13 @@ export default function ExercisesPage() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState('todos');
   const [creating, setCreating] = useState(false);
-  const students = state.users.filter((u) => u.role === 'student');
+  const students = getStudents(state);
 
   const deliveredCount = (exercise) => state.submissions.filter((s) => s.exerciseId === exercise.id).length;
 
   // Para el alumno: su propio estado. Para el profesor: si ya entregaron todos.
-  const isDone = (exercise) => (isTeacher ? deliveredCount(exercise) >= students.length : Boolean(getSubmission(state, exercise.id, user.id)));
+  const isDone = (exercise) =>
+    isTeacher ? students.length > 0 && deliveredCount(exercise) >= students.length : Boolean(getSubmission(state, exercise.id, user.id));
 
   const statusFor = (exercise) => {
     if (isTeacher) return undefined;

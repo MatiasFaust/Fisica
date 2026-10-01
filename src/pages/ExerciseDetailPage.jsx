@@ -12,6 +12,7 @@ import UserAvatar from '../components/UserAvatar';
 import EmptyState from '../components/ui/EmptyState';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { DIFFICULTIES, deleteExercise, getSubmission, reopenExercise, submitAnswer } from '../services/exerciseService';
+import { getStudents } from '../services/studentService';
 import { formatDate, formatDue, formatRelative, daysUntil } from '../utils/format';
 
 export default function ExerciseDetailPage() {
@@ -38,7 +39,7 @@ export default function ExerciseDetailPage() {
   const file = state.files.find((f) => f.id === exercise.fileId);
   const difficulty = DIFFICULTIES[exercise.difficulty] ?? DIFFICULTIES.media;
   const mySubmission = getSubmission(state, exercise.id, user.id);
-  const students = state.users.filter((u) => u.role === 'student');
+  const students = getStudents(state);
   const overdue = daysUntil(exercise.dueDate) < 0;
 
   const handleSubmit = async (event) => {

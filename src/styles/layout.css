@@ -154,6 +154,18 @@
   letter-spacing: 0.05em;
 }
 
+.sidebar__badge {
+  margin-left: auto;
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #f59e0b;
+  color: var(--navy-900);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+}
+
 .sidebar__footer {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding-top: 14px;

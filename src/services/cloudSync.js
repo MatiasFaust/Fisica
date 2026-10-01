@@ -15,17 +15,45 @@ const ACTIVITY_LIMIT = 60;
 const serialize = (name, item) => (name === 'savedClasses' ? { ...item, pages: JSON.stringify(item.pages) } : item);
 const deserialize = (name, data) => (name === 'savedClasses' && typeof data.pages === 'string' ? { ...data, pages: JSON.parse(data.pages) } : data);
 
+const RETRY_DELAYS = [1500, 3000, 6000];
+
 /** Escucha todas las colecciones. onChange(nombre, documentos). Devuelve la función para dejar de escuchar. */
 export function listenToCollections(onChange, onError) {
-  const unsubscribers = COLLECTIONS.map((name) => {
+  const active = new Map();
+  const timers = new Set();
+  let stopped = false;
+
+  const listen = (name, attempt = 0) => {
     const source = name === 'activity' ? query(collection(db, name), orderBy('at', 'desc'), limit(ACTIVITY_LIMIT)) : collection(db, name);
-    return onSnapshot(
-      source,
-      (snapshot) => onChange(name, snapshot.docs.map((d) => deserialize(name, { ...d.data(), id: d.id }))),
-      (error) => onError?.(error),
+    active.set(
+      name,
+      onSnapshot(
+        source,
+        (snapshot) => onChange(name, snapshot.docs.map((d) => deserialize(name, { ...d.data(), id: d.id }))),
+        (error) => {
+          // Un permiso recién otorgado (por ejemplo, al aprobar a un alumno) puede tardar
+          // unos segundos en valer para el servidor: se reintenta antes de avisar.
+          if (stopped) return;
+          if (error.code === 'permission-denied' && attempt < RETRY_DELAYS.length) {
+            const timer = setTimeout(() => {
+              timers.delete(timer);
+              if (!stopped) listen(name, attempt + 1);
+            }, RETRY_DELAYS[attempt]);
+            timers.add(timer);
+          } else {
+            onError?.(error);
+          }
+        },
+      ),
     );
-  });
-  return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
+  };
+
+  COLLECTIONS.forEach((name) => listen(name));
+  return () => {
+    stopped = true;
+    timers.forEach(clearTimeout);
+    active.forEach((unsubscribe) => unsubscribe());
+  };
 }
 
 /** Guarda en Firestore las diferencias entre dos estados. */

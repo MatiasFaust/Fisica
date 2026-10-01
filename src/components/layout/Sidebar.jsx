@@ -3,6 +3,7 @@ import { Home, FolderOpen, BookOpen, ClipboardList, PenLine, Files, Users, Setti
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../hooks/useStore';
 import UserAvatar from '../UserAvatar';
+import { getPendingStudents } from '../../services/studentService';
 import logo from '../../assets/logo.svg';
 
 const NAV_ITEMS = [
@@ -12,15 +13,16 @@ const NAV_ITEMS = [
   { to: '/ejercicios', label: 'Ejercicios', icon: ClipboardList },
   { to: '/pizarra', label: 'Pizarra en vivo', icon: PenLine, live: true },
   { to: '/mis-archivos', label: 'Mis archivos', icon: Files },
-  { to: '/alumnos', label: 'Alumnos', icon: Users, teacherOnly: true },
+  { to: '/alumnos', label: 'Alumnos', icon: Users, teacherOnly: true, requests: true },
   { to: '/configuracion', label: 'Configuración', icon: Settings },
 ];
 
 export default function Sidebar({ open, onClose }) {
   const { user, isTeacher, logout } = useAuth();
-  const { sessions } = useStore();
+  const state = useStore();
   const navigate = useNavigate();
-  const liveCount = sessions.filter((session) => session.active).length;
+  const liveCount = state.sessions.filter((session) => session.active).length;
+  const pendingCount = isTeacher ? getPendingStudents(state).length : 0;
 
   const handleLogout = async () => {
     await logout();
@@ -43,11 +45,16 @@ export default function Sidebar({ open, onClose }) {
         </div>
 
         <nav className="sidebar__nav">
-          {NAV_ITEMS.filter((item) => !item.teacherOnly || isTeacher).map(({ to, label, icon: Icon, live }) => (
+          {NAV_ITEMS.filter((item) => !item.teacherOnly || isTeacher).map(({ to, label, icon: Icon, live, requests }) => (
             <NavLink key={to} to={to} className={({ isActive }) => `sidebar__link ${isActive ? 'is-active' : ''}`} onClick={onClose}>
               <Icon size={19} />
               <span>{label}</span>
               {live && liveCount > 0 && <span className="sidebar__live">EN VIVO</span>}
+              {requests && pendingCount > 0 && (
+                <span className="sidebar__badge" title="Solicitudes pendientes">
+                  {pendingCount}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>

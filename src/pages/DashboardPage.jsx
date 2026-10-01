@@ -14,6 +14,7 @@ import {
   Presentation,
   Save,
   Sparkles,
+  UserPlus,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useStore } from '../hooks/useStore';
@@ -23,6 +24,7 @@ import TopicIcon from '../components/TopicIcon';
 import UserAvatar from '../components/UserAvatar';
 import EmptyState from '../components/ui/EmptyState';
 import { getSubmission, DIFFICULTIES } from '../services/exerciseService';
+import { getPendingStudents, getStudents } from '../services/studentService';
 import { getTopicForFolder } from '../services/repositoryService';
 import { formatDue, formatLongDate, formatRelative, daysUntil } from '../utils/format';
 
@@ -58,7 +60,8 @@ export default function DashboardPage() {
   const publicFiles = useMemo(() => state.files.filter((file) => file.visibility !== 'private'), [state.files]);
   const latestFiles = useMemo(() => [...publicFiles].sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt)).slice(0, 5), [publicFiles]);
   const liveSession = state.sessions.find((session) => session.active);
-  const students = state.users.filter((u) => u.role === 'student');
+  const students = getStudents(state);
+  const pendingRequests = isTeacher ? getPendingStudents(state).length : 0;
 
   const upcoming = useMemo(() => {
     return [...state.exercises]
@@ -115,6 +118,19 @@ export default function DashboardPage() {
           </Link>
         </div>
       </section>
+
+      {pendingRequests > 0 && (
+        <Link to="/alumnos" className="request-banner">
+          <UserPlus size={20} />
+          <span>
+            <strong>
+              {pendingRequests === 1 ? '1 alumno pidió' : `${pendingRequests} alumnos pidieron`} acceso al curso
+            </strong>
+            Revisá y aprobá las solicitudes.
+          </span>
+          <ArrowRight size={18} />
+        </Link>
+      )}
 
       {liveSession && (
         <Link to={`/pizarra/${liveSession.id}`} className="live-banner">

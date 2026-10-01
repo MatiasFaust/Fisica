@@ -14,7 +14,7 @@ import { formatRelative, todayLabel } from '../utils/format';
 
 export default function WhiteboardLobbyPage() {
   const state = useStore();
-  const { user, isTeacher } = useAuth();
+  const { user, isTeacher, cloud } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
@@ -153,13 +153,15 @@ export default function WhiteboardLobbyPage() {
         </section>
       )}
 
-      <aside className="tip">
-        <Lightbulb size={18} />
-        <p>
-          <strong>Probá el tiempo real:</strong> abrí esta página en otra pestaña o ventana, ingresá como {isTeacher ? 'alumno' : 'profesor'} y entrá a la misma clase. Lo que
-          escribas en una se verá en la otra al instante.
-        </p>
-      </aside>
+      {!cloud && (
+        <aside className="tip">
+          <Lightbulb size={18} />
+          <p>
+            <strong>Probá el tiempo real:</strong> abrí esta página en otra pestaña o ventana, ingresá como {isTeacher ? 'alumno' : 'profesor'} y entrá a la misma
+            clase. Lo que escribas en una se verá en la otra al instante.
+          </p>
+        </aside>
+      )}
 
       <ClassFormModal
         open={creating}

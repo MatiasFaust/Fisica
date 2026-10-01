@@ -33,6 +33,8 @@ export const isFirebaseConfigured = Boolean(firebaseConfig.apiKey && firebaseCon
 
 export const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
 export const auth = app ? getAuth(app) : null;
+// Los emails de Firebase (por ejemplo, para cambiar la contraseña) llegan en español.
+if (auth) auth.languageCode = 'es';
 // ignoreUndefinedProperties: los objetos de la app a veces tienen campos opcionales sin valor.
 export const db = app ? initializeFirestore(app, { ignoreUndefinedProperties: true }) : null;
 export const rtdb = app ? getDatabase(app) : null;

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, Presentation, ArrowLeft, ArrowRight, FolderOpen, PenLine, ClipboardList, Info, AlertCircle } from 'lucide-react';
+import { GraduationCap, Presentation, ArrowLeft, ArrowRight, FolderOpen, PenLine, ClipboardList, Info, AlertCircle, MailCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useStore } from '../hooks/useStore';
 import UserAvatar from '../components/UserAvatar';
@@ -61,20 +61,31 @@ export default function LoginPage() {
 
 /** Ingreso con cuenta real (Firebase Authentication). */
 function CloudLogin() {
-  const { login, register } = useAuth();
-  const [mode, setMode] = useState('login');
+  const { login, register, resetPassword } = useAuth();
+  const [mode, setMode] = useState('login'); // 'login' | 'register' | 'reset'
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
+  const [resetSent, setResetSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const set = (field) => (event) => setForm({ ...form, [field]: event.target.value });
   const isRegister = mode === 'register';
+
+  const switchMode = (next) => {
+    setMode(next);
+    setError('');
+    setResetSent(false);
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
     setBusy(true);
     try {
-      if (isRegister) await register(form);
+      if (mode === 'reset') {
+        await resetPassword(form.email);
+        setResetSent(true);
+        setBusy(false);
+      } else if (isRegister) await register(form);
       else await login(form.email, form.password);
     } catch (err) {
       setError(err.message);
@@ -82,11 +93,45 @@ function CloudLogin() {
     }
   };
 
+  if (mode === 'reset') {
+    return (
+      <form className="form" onSubmit={handleSubmit}>
+        <button type="button" className="btn btn--ghost btn--sm login__back" onClick={() => switchMode('login')}>
+          <ArrowLeft size={16} /> Volver
+        </button>
+        <div>
+          <h2>Cambiar contraseña</h2>
+          <p className="muted">Te mandamos un email con un link para elegir una contraseña nueva.</p>
+        </div>
+        <label className="field">
+          <span className="field__label">Email</span>
+          <input className="input" type="email" value={form.email} onChange={set('email')} autoComplete="email" required />
+        </label>
+        {error && (
+          <p className="form__error">
+            <AlertCircle size={16} /> {error}
+          </p>
+        )}
+        {resetSent ? (
+          <p className="form__success">
+            <MailCheck size={16} /> Listo. Si hay una cuenta con ese email, te llega el link en unos minutos (revisá también el correo no deseado).
+          </p>
+        ) : (
+          <button type="submit" className="btn btn--primary btn--lg btn--block" disabled={busy}>
+            {busy ? 'Enviando…' : 'Enviar link'}
+          </button>
+        )}
+      </form>
+    );
+  }
+
   return (
     <form className="form" onSubmit={handleSubmit}>
       <div>
         <h2>{isRegister ? 'Crear cuenta' : '¡Hola! Ingresá a tu aula'}</h2>
-        <p className="muted">{isRegister ? 'Completá tus datos para sumarte al curso.' : 'Usá el email y la contraseña de tu cuenta.'}</p>
+        <p className="muted">
+          {isRegister ? 'Completá tus datos. El profesor tiene que aprobar tu cuenta antes de que puedas entrar.' : 'Usá el email y la contraseña de tu cuenta.'}
+        </p>
       </div>
 
       {isRegister && (
@@ -122,16 +167,15 @@ function CloudLogin() {
         {busy ? 'Un momento…' : isRegister ? 'Crear cuenta' : 'Ingresar'}
       </button>
 
+      {!isRegister && (
+        <button type="button" className="link login__forgot" onClick={() => switchMode('reset')}>
+          ¿Olvidaste tu contraseña?
+        </button>
+      )}
+
       <p className="login__switch">
         {isRegister ? '¿Ya tenés cuenta?' : '¿Sos nuevo en el curso?'}{' '}
-        <button
-          type="button"
-          className="link"
-          onClick={() => {
-            setMode(isRegister ? 'login' : 'register');
-            setError('');
-          }}
-        >
+        <button type="button" className="link" onClick={() => switchMode(isRegister ? 'login' : 'register')}>
           {isRegister ? 'Ingresar' : 'Crear cuenta'}
         </button>
       </p>

@@ -15,6 +15,7 @@ import Modal from '../components/ui/Modal';
 import ExerciseFormModal from '../components/modals/ExerciseFormModal';
 import { getFilesForTopic, updateTopic } from '../services/repositoryService';
 import { createExercise, getSubmission } from '../services/exerciseService';
+import { getStudents } from '../services/studentService';
 import { daysUntil, formatDate } from '../utils/format';
 
 export default function TopicDetailPage() {
@@ -42,7 +43,7 @@ export default function TopicDetailPage() {
   const extra = files.filter((f) => f.type !== 'pdf' || f.category === 'complementario');
   const exercises = state.exercises.filter((e) => e.topicId === topic.id);
   const classes = state.savedClasses.filter((c) => c.topicId === topic.id);
-  const students = state.users.filter((u) => u.role === 'student');
+  const students = getStudents(state);
 
   const statusFor = (exercise) => {
     if (isTeacher) return undefined;

@@ -41,9 +41,11 @@ function emit() {
   listeners.forEach((listener) => listener());
 }
 
-function reportError(error) {
+function reportError(error, kind = 'write') {
   console.error(error);
-  const message = error?.code === 'permission-denied' ? 'No tenés permiso para hacer este cambio.' : 'No se pudo guardar el cambio en la nube.';
+  let message = 'No se pudo guardar el cambio en la nube.';
+  if (kind === 'read') message = 'No se pudieron cargar los datos del curso. Probá recargar la página.';
+  else if (error?.code === 'permission-denied') message = 'No tenés permiso para hacer este cambio.';
   errorListeners.forEach((listener) => listener(message));
 }
 
@@ -100,7 +102,7 @@ export function connectCloud() {
       state = { ...state, [name]: docs, loaded: pending.size === 0 };
       emit();
     },
-    reportError,
+    (error) => reportError(error, 'read'),
   );
 }
 

@@ -19,6 +19,7 @@ import MyFilesPage from './pages/MyFilesPage';
 import StudentsPage from './pages/StudentsPage';
 import SettingsPage from './pages/SettingsPage';
 import NotFoundPage from './pages/NotFoundPage';
+import WaitingAccessPage from './pages/WaitingAccessPage';
 
 function RequireAuth({ children, teacherOnly = false }) {
   const { user, isTeacher } = useAuth();
@@ -37,13 +38,14 @@ function Splash() {
 }
 
 export default function App() {
-  const { user, loading } = useAuth();
+  const { user, loading, waitingProfile } = useAuth();
   const toast = useToast();
 
   // Avisa si un cambio no se pudo guardar en la nube (por ejemplo, por permisos).
   useEffect(() => onSyncError(toast.error), [toast]);
 
   if (loading) return <Splash />;
+  if (waitingProfile) return <WaitingAccessPage />;
 
   return (
     <Routes>

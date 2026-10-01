@@ -65,6 +65,19 @@ src/
 
 Las páginas nunca tocan el almacenamiento directamente: usan las funciones de `src/services/`, que deciden según el modo.
 
+## Acceso de alumnos (modo Firebase)
+
+La plataforma está publicada en **<https://fisica-aula.web.app>**, pero solo entran el profesor y los alumnos que él aprueba:
+
+1. El alumno entra al link y toca **Crear cuenta**. Queda en una pantalla de espera.
+2. Al profesor le aparece el aviso en *Inicio* y un contador en *Alumnos*; ahí toca **Aprobar** o **Rechazar**.
+3. La pantalla del alumno se actualiza sola y ya puede usar todo.
+4. Desde *Alumnos* el profesor puede **quitar el acceso** en cualquier momento (y devolverlo).
+
+Esto lo garantizan las reglas de seguridad (`firestore.rules`, `database.rules.json`, `storage.rules`): una cuenta no aprobada no puede leer ni escribir nada, aunque intente acceder a la base directamente.
+
+Para **cambiar el email del profesor**: actualizarlo en `.env` (`VITE_TEACHER_EMAIL`), en `firestore.rules` y en `database.rules.json`, y volver a publicar (`firebase deploy`).
+
 ## Configurar Firebase
 
 1. Entrá a <https://console.firebase.google.com> y creá un proyecto (por ejemplo `fisica-aula`).
@@ -74,7 +87,7 @@ Las páginas nunca tocan el almacenamiento directamente: usan las funciones de `
 5. **Storage** › Comenzar. *Nota: Firebase pide activar el plan Blaze (requiere tarjeta, pero el uso de un curso entra en la capa gratuita). Sin Storage todo funciona menos la subida de archivos nuevos.*
 6. Configuración del proyecto › Tus apps › agregá una app **Web** (`</>`) y copiá los valores de `firebaseConfig`.
 7. Copiá `.env.example` como `.env` y completalo. En `VITE_TEACHER_EMAIL` poné el email con el que se va a registrar el profesor.
-8. En `firestore.rules` reemplazá `profesor@ejemplo.com` por ese mismo email y publicá las reglas:
+8. En `firestore.rules` y `database.rules.json` poné ese mismo email y publicá las reglas:
    ```bash
    npm install -g firebase-tools
    firebase login
@@ -82,7 +95,7 @@ Las páginas nunca tocan el almacenamiento directamente: usan las funciones de `
    firebase deploy --only firestore:rules,database,storage
    ```
    (También se pueden pegar a mano en la pestaña *Reglas* de cada servicio.)
-9. `npm run dev`. El profesor crea su cuenta con el email configurado; la primera vez se carga el contenido de ejemplo (carpetas, temas, ejercicios). Los alumnos se registran con *Crear cuenta*.
+9. `npm run dev`. El profesor crea su cuenta con el email configurado; la primera vez se carga el contenido de ejemplo (carpetas, temas, ejercicios). Los alumnos se registran con *Crear cuenta* y el profesor los aprueba.
 
 **Opcional:** para descargar archivos e insertarlos en la pizarra como imagen exportable, configurá CORS del bucket: `gsutil cors set cors.json gs://TU-BUCKET`.
 

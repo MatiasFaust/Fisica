@@ -95,6 +95,8 @@ Solo la ven los alumnos que ya entraron a la clase (después de la sala de esper
 
 **Límites de la videollamada propia:** el audio y el video van directo de navegador a navegador (Firebase solo conecta a los participantes), así que el profesor envía una copia a cada alumno. Con una conexión común funciona bien hasta unos **10–15 alumnos**. En redes muy cerradas (algunas escuelas o empresas) puede hacer falta un servidor TURN: se configura en `.env` con `VITE_TURN_URLS`, `VITE_TURN_USERNAME` y `VITE_TURN_CREDENTIAL` (por ejemplo, con la capa gratuita de Metered).
 
+**Duración:** la videollamada propia no tiene límite de tiempo. Lo que sí tiene límite es la capa gratuita de Realtime Database (10 GB de descarga por mes; si se supera, se pausa hasta el mes siguiente). El video no pasa por Firebase; lo que más consume es la pizarra en vivo, por eso solo comparten el cursor quienes pueden escribir y los envíos están limitados. El consumo se ve en la consola de Firebase › Realtime Database › *Uso*.
+
 ### Reglas de seguridad
 
 `firestore.rules`, `storage.rules` y `database.rules.json`. Este último se genera con `node scripts/database-rules.mjs` (toma el email del profesor de `.env`) y se publica con `npx firebase-tools deploy --only database`.

@@ -14,8 +14,11 @@ const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 4;
 const STROKE_TOOLS = new Set(['pen', 'marker', 'eraser']);
 const SHAPE_TOOLS = new Set(['line', 'arrow', 'rect', 'ellipse']);
-const DRAFT_INTERVAL = 45;
-const CURSOR_INTERVAL = 40;
+// Cada envío viaja a todos los participantes: se limita para cuidar la cuota gratis de Firebase.
+const DRAFT_INTERVAL = 90;
+const CURSOR_INTERVAL = 120;
+/** Un decimal alcanza para dibujar y achica los mensajes. */
+const round = (value) => Math.round(value * 10) / 10;
 const CURSOR_TIMEOUT = 6000;
 
 const clampZoom = (zoom) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
@@ -127,7 +130,11 @@ export default function Whiteboard({
       render();
     });
     observer.observe(container);
-    return () => observer.disconnect();
+    const timers = throttle.current;
+    return () => {
+      observer.disconnect();
+      clearTimeout(timers.cursorTimer);
+    };
   }, [render]);
 
   /* ---------- Cámara ---------- */
@@ -280,9 +287,9 @@ export default function Whiteboard({
     const base = { id: uid('o-'), type: currentTool, color: currentColor, authorId: author };
     if (STROKE_TOOLS.has(currentTool)) {
       const strokeSize = currentTool === 'eraser' ? Math.max(14, currentSize * 5) : currentTool === 'marker' ? Math.max(12, currentSize * 3.5) : currentSize;
-      draftRef.current = { ...base, size: strokeSize, points: [[world.x, world.y]] };
+      draftRef.current = { ...base, size: strokeSize, points: [[round(world.x), round(world.y)]] };
     } else if (SHAPE_TOOLS.has(currentTool)) {
-      draftRef.current = { ...base, size: currentSize, x1: world.x, y1: world.y, x2: world.x, y2: world.y };
+      draftRef.current = { ...base, size: currentSize, x1: round(world.x), y1: round(world.y), x2: round(world.x), y2: round(world.y) };
     }
     gesture.current = { mode: 'draw' };
     requestRender();
@@ -292,11 +299,18 @@ export default function Whiteboard({
     const screen = toScreen(event);
     const world = toWorld(screen);
 
-    // Cursor visible para los demás participantes.
+    // Cursor visible para los demás participantes (limitado; al frenar se manda la última posición).
+    const cursor = { x: round(world.x), y: round(world.y) };
     const now = performance.now();
+    clearTimeout(throttle.current.cursorTimer);
     if (now - throttle.current.cursor > CURSOR_INTERVAL) {
       throttle.current.cursor = now;
-      latest.current.onCursor?.(world);
+      latest.current.onCursor?.(cursor);
+    } else {
+      throttle.current.cursorTimer = setTimeout(() => {
+        throttle.current.cursor = performance.now();
+        latest.current.onCursor?.(cursor);
+      }, CURSOR_INTERVAL);
     }
 
     if (!pointers.current.has(event.pointerId)) return;
@@ -329,11 +343,11 @@ export default function Whiteboard({
         events.forEach((sample) => {
           const point = toWorld(toScreen(sample));
           const last = draft.points[draft.points.length - 1];
-          if (Math.hypot(point.x - last[0], point.y - last[1]) >= minDistance) draft.points.push([point.x, point.y]);
+          if (Math.hypot(point.x - last[0], point.y - last[1]) >= minDistance) draft.points.push([round(point.x), round(point.y)]);
         });
       } else {
-        draft.x2 = world.x;
-        draft.y2 = world.y;
+        draft.x2 = round(world.x);
+        draft.y2 = round(world.y);
       }
       broadcastDraft();
       requestRender();

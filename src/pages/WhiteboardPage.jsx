@@ -507,7 +507,8 @@ function BoardRoom({ sessionId, session, isPractice }) {
           remoteRef={remoteRef}
           onCommit={(objects) => addObjects(page.id, objects)}
           onDraft={(obj) => sendDraft(obj ? { pageId: page.id, obj } : null)}
-          onCursor={(point) => sendCursor({ ...point, pageId: page.id, name: user.name, color: user.color })}
+          // Solo comparte el cursor quien puede escribir (los que miran no ensucian la pizarra ni gastan cuota).
+          onCursor={(point) => allowedToDraw && sendCursor({ ...point, pageId: page.id, name: user.name, color: user.color })}
           onOpenObject={handleOpenObject}
           onZoomChange={setZoom}
         />

@@ -1,0 +1,70 @@
+rules_version = '2';
+
+// Reglas de Firestore.
+// IMPORTANTE: reemplazá profesor@ejemplo.com por el mismo email de VITE_TEACHER_EMAIL.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isTeacher() {
+      return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+    }
+
+    // Perfiles: cada uno crea el suyo. Solo el email del profesor puede tener rol de profesor,
+    // y nadie puede cambiarse el rol después.
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create: if request.auth.uid == userId
+        && (request.resource.data.role == 'student'
+            || (request.resource.data.role == 'teacher' && request.auth.token.email == 'profesor@ejemplo.com'));
+      allow update: if request.auth.uid == userId && request.resource.data.role == resource.data.role;
+    }
+
+    // Material del curso: lo ve todo alumno con cuenta, lo modifica solo el profesor.
+    match /folders/{id} {
+      allow read: if signedIn();
+      allow write: if isTeacher();
+    }
+    match /topics/{id} {
+      allow read: if signedIn();
+      allow write: if isTeacher();
+    }
+    match /exercises/{id} {
+      allow read: if signedIn();
+      allow write: if isTeacher();
+    }
+    match /sessions/{id} {
+      allow read: if signedIn();
+      allow write: if isTeacher();
+    }
+    match /savedClasses/{id} {
+      allow read: if signedIn();
+      allow write: if isTeacher();
+    }
+
+    // Archivos: los públicos los sube el profesor; cada alumno puede subir y borrar los suyos privados.
+    // (La lectura es general porque la app escucha la colección completa; la interfaz
+    // solo muestra a cada alumno sus propios archivos privados.)
+    match /files/{id} {
+      allow read: if signedIn();
+      allow create: if isTeacher()
+        || (signedIn() && request.resource.data.visibility == 'private' && request.resource.data.ownerId == request.auth.uid);
+      allow update, delete: if isTeacher() || (signedIn() && resource.data.ownerId == request.auth.uid);
+    }
+
+    // Entregas: cada alumno maneja las suyas; el profesor las ve todas.
+    match /submissions/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.resource.data.studentId == request.auth.uid;
+      allow delete: if isTeacher() || (signedIn() && resource.data.studentId == request.auth.uid);
+    }
+
+    // Actividad reciente: cualquiera registra la propia.
+    match /activity/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isTeacher();
+    }
+  }
+}

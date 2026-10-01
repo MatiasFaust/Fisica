@@ -1,0 +1,23 @@
+{
+  "rules": {
+    "boards": {
+      "$sessionId": {
+        ".read": "auth != null",
+        "ops": {
+          "$opId": {
+            ".write": "auth != null && !data.exists()"
+          }
+        },
+        "presence": {
+          "$uid": { ".write": "auth != null && auth.uid == $uid" }
+        },
+        "cursors": {
+          "$uid": { ".write": "auth != null && auth.uid == $uid" }
+        },
+        "drafts": {
+          "$uid": { ".write": "auth != null && auth.uid == $uid" }
+        }
+      }
+    }
+  }
+}

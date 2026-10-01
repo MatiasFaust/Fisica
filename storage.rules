@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// Reglas de Firebase Storage: archivos de hasta 25 MB, solo para usuarios con cuenta.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /files/{fileId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.resource.size < 25 * 1024 * 1024;
+      allow delete: if request.auth != null;
+    }
+  }
+}

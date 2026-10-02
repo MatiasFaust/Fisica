@@ -22,7 +22,7 @@ export default function LoginPage() {
           <img src={logo} alt="" width="44" height="44" />
           <div>
             <strong>Física</strong>
-            <span>Aula digital</span>
+            <span>Nicolas Laviano</span>
           </div>
         </div>
 

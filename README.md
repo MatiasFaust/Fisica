@@ -1,4 +1,4 @@
-# Física · Aula digital
+# Física · Nicolas Laviano
 
 Plataforma para un profesor de Física y sus alumnos: repositorio de material, temas, ejercicios con entregas y una **pizarra colaborativa en tiempo real**.
 

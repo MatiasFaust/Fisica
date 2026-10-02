@@ -38,7 +38,7 @@ export default function Sidebar({ open, onClose }) {
           <img src={logo} alt="" width="36" height="36" />
           <div>
             <strong>Física</strong>
-            <span>Aula digital</span>
+            <span>Nicolas Laviano</span>
           </div>
           <button className="icon-btn sidebar__close" onClick={onClose} aria-label="Cerrar menú">
             <X size={18} />

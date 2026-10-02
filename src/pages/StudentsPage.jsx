@@ -48,7 +48,7 @@ export default function StudentsPage() {
   return (
     <div className="page">
       <PageHeader
-        eyebrow="Curso de Física"
+        eyebrow="Física Nicolas Laviano"
         title="Alumnos"
         subtitle={`${students.length} ${students.length === 1 ? 'alumno' : 'alumnos'} con acceso · seguimiento de ejercicios y actividad.`}
         actions={

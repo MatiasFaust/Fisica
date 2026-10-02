@@ -40,7 +40,7 @@ export function createSamplePdf({ title, sections = [] }) {
   const header = () => {
     ops.push('0.06 0.16 0.29 rg', `0 ${PAGE_H - 96} ${PAGE_W} 96 re f`);
     ops.push('1 1 1 rg', `BT /F2 22 Tf ${MARGIN} ${PAGE_H - 58} Td (${escapePdf(title)}) Tj ET`);
-    ops.push('0.66 0.79 1 rg', `BT /F1 10 Tf ${MARGIN} ${PAGE_H - 80} Td (${escapePdf('Física · Profesor Martín')}) Tj ET`);
+    ops.push('0.66 0.79 1 rg', `BT /F1 10 Tf ${MARGIN} ${PAGE_H - 80} Td (${escapePdf('Física · Nicolas Laviano')}) Tj ET`);
     ops.push('0.07 0.09 0.13 rg');
   };
   const newPage = () => {

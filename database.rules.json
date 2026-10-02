@@ -1,17 +1,17 @@
 {
   "rules": {
     "members": {
-      ".read": "auth != null && auth.token.email == 'mtsfaust@gmail.com'",
+      ".read": "auth != null && (auth.token.email == 'mtsfaust@gmail.com' || auth.token.email == 'nicolaslaviano@gmail.com')",
       "$uid": {
         ".read": "auth != null && auth.uid == $uid",
-        ".write": "auth != null && auth.token.email == 'mtsfaust@gmail.com'",
+        ".write": "auth != null && (auth.token.email == 'mtsfaust@gmail.com' || auth.token.email == 'nicolaslaviano@gmail.com')",
         ".validate": "newData.isBoolean()"
       }
     },
     "boards": {
       "$sessionId": {
-        ".read": "auth != null && auth.token.email == 'mtsfaust@gmail.com'",
-        ".write": "auth != null && auth.token.email == 'mtsfaust@gmail.com'",
+        ".read": "auth != null && (auth.token.email == 'mtsfaust@gmail.com' || auth.token.email == 'nicolaslaviano@gmail.com')",
+        ".write": "auth != null && (auth.token.email == 'mtsfaust@gmail.com' || auth.token.email == 'nicolaslaviano@gmail.com')",
         "config": {
           ".read": "auth != null && root.child('members').child(auth.uid).val() == true"
         },

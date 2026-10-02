@@ -103,7 +103,7 @@ Solo la ven los alumnos que ya entraron a la clase (después de la sala de esper
 
 Esto lo garantizan las reglas de seguridad (`firestore.rules`, `database.rules.json`, `storage.rules`): una cuenta no aprobada no puede leer ni escribir nada, aunque intente acceder a la base directamente.
 
-Para **cambiar el email del profesor**: actualizarlo en `.env` (`VITE_TEACHER_EMAIL`), en `firestore.rules` y en `database.rules.json`, y volver a publicar (`firebase deploy`).
+Para **agregar o cambiar profesores**: poner los emails en `.env` (`VITE_TEACHER_EMAIL`, separados por coma) y en `firestore.rules`, regenerar `database.rules.json` con `node scripts/database-rules.mjs` y volver a publicar. Si la persona ya tenía cuenta de alumno, su perfil se cambia a profesor desde la consola de Firebase (Firestore › users › `role: "teacher"`).
 
 ## Configurar Firebase
 

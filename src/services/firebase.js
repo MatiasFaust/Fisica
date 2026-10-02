@@ -26,8 +26,13 @@ export const firebaseConfig = {
   databaseURL: env.VITE_FIREBASE_DATABASE_URL,
 };
 
-/** Email de la cuenta que tendrá permisos de profesor. */
-export const TEACHER_EMAIL = (env.VITE_TEACHER_EMAIL ?? '').trim().toLowerCase();
+/** Emails con permisos de profesor (en .env, separados por coma). */
+export const TEACHER_EMAILS = (env.VITE_TEACHER_EMAIL ?? '')
+  .split(',')
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
+
+export const isTeacherEmail = (email = '') => TEACHER_EMAILS.includes(email.trim().toLowerCase());
 
 export const isFirebaseConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.databaseURL);
 

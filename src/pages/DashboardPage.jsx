@@ -62,6 +62,7 @@ export default function DashboardPage() {
   const latestFiles = useMemo(() => [...publicFiles].sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt)).slice(0, 5), [publicFiles]);
   const liveSession = state.sessions.find((session) => session.active && canSeeSession(session, user));
   const students = getStudents(state);
+  const teacherNames = state.users.filter((u) => u.role === 'teacher').map((u) => u.displayName).join(' · ');
   const pendingRequests = isTeacher ? getPendingStudents(state).length : 0;
 
   const upcoming = useMemo(() => {
@@ -110,7 +111,7 @@ export default function DashboardPage() {
             <span className="tag tag--subject">
               <Sparkles size={14} /> Materia: Física
             </span>
-            {isTeacher ? `${students.length} alumnos en el curso` : 'Profesor Martín'}
+            {isTeacher ? `${students.length} alumnos en el curso` : teacherNames}
           </p>
         </div>
         <div className="welcome__actions">

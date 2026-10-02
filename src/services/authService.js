@@ -3,7 +3,7 @@
  *  - Modo demostración: se elige un usuario de prueba. Se usa sessionStorage para
  *    que cada pestaña pueda tener un usuario distinto.
  *  - Modo Firebase: cuentas reales con email y contraseña. La cuenta cuyo email
- *    coincide con VITE_TEACHER_EMAIL es la del profesor; el resto son alumnos,
+ *    está en VITE_TEACHER_EMAIL es de un profesor; el resto son alumnos,
  *    que quedan pendientes hasta que el profesor los aprueba.
  */
 import {
@@ -14,7 +14,7 @@ import {
   signOut,
 } from 'firebase/auth';
 import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
-import { auth, db, isFirebaseConfigured, TEACHER_EMAIL } from './firebase';
+import { auth, db, isFirebaseConfigured, isTeacherEmail } from './firebase';
 import { getState, updateState } from './store';
 import { STUDENT_STATUS } from './studentService';
 
@@ -86,7 +86,7 @@ export async function createProfile(firebaseUser, name) {
   const profileRef = doc(db, 'users', firebaseUser.uid);
   if ((await getDoc(profileRef)).exists()) return;
   const email = firebaseUser.email.toLowerCase();
-  const isTeacher = Boolean(TEACHER_EMAIL) && email === TEACHER_EMAIL;
+  const isTeacher = isTeacherEmail(email);
   const cleanName = (name || email.split('@')[0]).trim();
   const profile = {
     name: cleanName,

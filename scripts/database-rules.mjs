@@ -2,7 +2,7 @@
  * Genera database.rules.json (reglas de Realtime Database).
  *
  * Uso:  node scripts/database-rules.mjs [email-del-profesor ...]
- * Sin argumentos usa VITE_TEACHER_EMAIL del archivo .env.
+ * Sin argumentos usa VITE_TEACHER_EMAIL del archivo .env (uno o varios, separados por coma).
  * Después: npx firebase-tools deploy --only database
  */
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -11,9 +11,10 @@ function teacherEmails() {
   const fromArgs = process.argv.slice(2);
   if (fromArgs.length) return fromArgs;
   const env = readFileSync(new URL('../.env', import.meta.url), 'utf8');
-  const email = env.match(/^VITE_TEACHER_EMAIL=(.+)$/m)?.[1]?.trim();
-  if (!email) throw new Error('Falta VITE_TEACHER_EMAIL en .env');
-  return [email];
+  const value = env.match(/^VITE_TEACHER_EMAIL=(.+)$/m)?.[1] ?? '';
+  const emails = value.split(',').map((email) => email.trim()).filter(Boolean);
+  if (!emails.length) throw new Error('Falta VITE_TEACHER_EMAIL en .env');
+  return emails;
 }
 
 const emails = teacherEmails().map((email) => email.toLowerCase());

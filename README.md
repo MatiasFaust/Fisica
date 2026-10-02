@@ -67,7 +67,7 @@ Las páginas nunca tocan el almacenamiento directamente: usan las funciones de `
 
 ## Acceso de alumnos (modo Firebase)
 
-La plataforma está publicada en **<https://fisica-aula.web.app>**, pero solo entran el profesor y los alumnos que él aprueba:
+La plataforma está publicada en **<https://fisica-nicolas-laviano.web.app>**, pero solo entran el profesor y los alumnos que él aprueba:
 
 1. El alumno entra al link y toca **Crear cuenta**. Queda en una pantalla de espera.
 2. Al profesor le aparece el aviso en *Inicio* y un contador en *Alumnos*; ahí toca **Aprobar** o **Rechazar**.
@@ -126,4 +126,4 @@ Para **cambiar el email del profesor**: actualizarlo en `.env` (`VITE_TEACHER_EM
 
 **Opcional:** para descargar archivos e insertarlos en la pizarra como imagen exportable, configurá CORS del bucket: `gsutil cors set cors.json gs://TU-BUCKET`.
 
-**Publicar la página:** `npm run build` y `firebase deploy --only hosting` (queda en `https://TU-PROYECTO.web.app`).
+**Publicar la página:** `npm run build` y `npx firebase-tools deploy --only hosting`. Queda en `https://fisica-nicolas-laviano.web.app`; el link anterior (`fisica-aula.web.app`) redirige ahí (carpeta `redirect/`, ver `firebase.json`).

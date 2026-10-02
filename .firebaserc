@@ -1,5 +1,13 @@
 {
   "projects": {
     "default": "fisica-aula"
+  },
+  "targets": {
+    "fisica-aula": {
+      "hosting": {
+        "app": ["fisica-nicolas-laviano"],
+        "old-link": ["fisica-aula"]
+      }
+    }
   }
 }
